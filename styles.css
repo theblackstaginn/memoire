@@ -1,23 +1,19 @@
 *,
 *::before,
-*::after{
-  box-sizing:border-box;
-}
+*::after{ box-sizing:border-box; }
 
 html, body{
   margin:0;
   padding:0;
   height:100%;
   width:100%;
-  overflow:hidden;  /* no page scroll; modals handle their own */
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", serif;
+  overflow:hidden;
+  font-family:Georgia, serif;
   background:#000;
   color:#f5f1ea;
 }
 
-/* =========================
-   Scene (desk + book)
-   ========================= */
+/* DESK SCENE */
 #scene{
   position:relative;
   width:100vw;
@@ -25,7 +21,6 @@ html, body{
   display:flex;
   align-items:center;
   justify-content:center;
-  background:#000;
   overflow:hidden;
 }
 
@@ -37,80 +32,68 @@ html, body{
   object-fit:cover;
 }
 
-/* Click area for the book */
+/* Centered book */
 #book-hitbox{
   position:absolute;
+  bottom:8%;
+  left:50%;
+  transform:translateX(-50%);
+  width:22%;
+  max-width:360px;
   border:none;
   background:none;
   padding:0;
   cursor:pointer;
-
-  /* size */
-  width:22%;
-  max-width:360px;
-
-  /* POSITION — tweak these two to sit perfectly on the desk image */
-  bottom:8%;   /* move up/down */
-  right:12%;   /* move left/right */
 }
 
-#book-hitbox img{
-  width:100%;
-  height:auto;
-  display:block;
-}
+#book-hitbox img{ width:100%; display:block; }
 
-/* =========================
-   Modal overlay
-   ========================= */
-.hidden{
-  display:none !important;
-}
+/* OVERLAY */
+.hidden{ display:none !important; }
 
 #modal-overlay{
   position:fixed;
   inset:0;
-  display:flex;
-  align-items:center;
-  justify-content:center;
   background:rgba(0,0,0,0.75);
+  display:flex;
+  justify-content:center;
+  align-items:center;
   z-index:1000;
-  overflow:hidden; /* overlay itself never scrolls */
 }
 
+/* MODALS */
 .modal{
   position:relative;
 }
 
-/* Card-style modals (warning + mode chooser) */
 .card{
   min-width:280px;
   max-width:420px;
-  background:rgba(15,10,6,0.95);
-  border:1px solid rgba(248,239,222,0.28);
-  border-radius:16px;
-  box-shadow:0 18px 45px rgba(0,0,0,0.8);
-  padding:18px 18px 14px;
+  background:rgba(20,15,10,0.95);
+  border:1px solid rgba(255,255,255,0.2);
+  border-radius:12px;
+  padding:18px;
+  box-shadow:0 18px 42px rgba(0,0,0,0.85);
 }
 
 .modal-header{
   display:flex;
-  align-items:center;
   justify-content:space-between;
-  gap:12px;
-  margin-bottom:8px;
+  margin-bottom:12px;
 }
 
-.modal-icon{
-  width:32px;
-  height:32px;
+.modal-icon{ width:28px; height:28px; }
+
+.icon-button{
+  background:none;
+  border:none;
+  cursor:pointer;
+  padding:0;
 }
 
-.modal-body{
-  font-size:0.95rem;
-  line-height:1.5;
-  margin-bottom:14px;
-}
+.icon-button img{ width:22px; height:22px; }
+
+.modal-body{ margin-bottom:16px; }
 
 .modal-footer{
   display:flex;
@@ -118,99 +101,67 @@ html, body{
   gap:10px;
 }
 
-/* Buttons */
+/* BUTTONS */
 .btn{
   border-radius:999px;
-  padding:7px 16px;
-  font-size:0.9rem;
-  border:1px solid transparent;
+  padding:6px 14px;
   cursor:pointer;
-  letter-spacing:0.03em;
+  font-size:0.9rem;
 }
 
 .btn.primary{
-  background:#f0d4a4;
-  color:#27160c;
-  border-color:#f0d4a4;
+  background:#e8c99a;
+  color:#321d10;
+  border:1px solid #e8c99a;
 }
 
 .btn.secondary{
   background:transparent;
   color:#f5f1ea;
-  border-color:rgba(245,241,234,0.45);
+  border:1px solid rgba(255,255,255,0.4);
 }
 
-.btn:active{
-  transform:translateY(1px);
+/* PASSWORD ERROR */
+.error{
+  color:#ff6b6b;
+  margin-top:8px;
+  font-size:0.85rem;
 }
 
-/* Icon buttons (X) */
-.icon-button{
-  border:none;
-  background:none;
-  padding:0;
-  cursor:pointer;
-}
-
-.icon-button img{
-  width:22px;
-  height:22px;
-}
-
-/* Mode buttons */
-.mode-buttons{
-  display:flex;
-  gap:12px;
-  margin-top:10px;
-}
-
-.mode-btn{
-  flex:1;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  gap:6px;
-  border-radius:14px;
-  border:1px solid rgba(248,239,222,0.28);
-  background:rgba(21,13,8,0.9);
-  padding:10px 8px;
-  cursor:pointer;
-}
-
-.mode-btn img{
-  width:26px;
-  height:26px;
-}
-
-.mode-btn span{
+/* INPUT */
+.input-row input{
+  width:100%;
+  padding:8px 10px;
+  background:#080604;
+  border:1px solid rgba(255,255,255,0.25);
+  color:#f5f1ea;
+  border-radius:6px;
   font-size:0.9rem;
 }
 
-/* =========================
-   Reader (open book)
-   ========================= */
+/* READER */
 .reader{
   width:100%;
   height:100%;
   display:flex;
-  align-items:center;
   justify-content:center;
+  align-items:center;
 }
 
 .close-top-right{
   position:absolute;
-  top:18px;
-  right:18px;
-  z-index:20;
+  top:12px;
+  right:12px;
+  z-index:10;
 }
 
 #reader-frame{
   position:relative;
-  width:min(90vw, 1100px);
-  max-height:min(80vh, 700px);
+  width:min(90vw,1100px);
+  height:auto;
   display:flex;
-  align-items:center;
   justify-content:center;
+  align-items:center;
 }
 
 #reader-book{
@@ -219,123 +170,67 @@ html, body{
   display:block;
 }
 
-/* Pages overlay */
+/* PAGE TEXT OVERLAY */
 #pages{
   position:absolute;
-  inset:7% 10%;
+  inset:12% 9%;
   display:grid;
   grid-template-columns:1fr 1fr;
-  pointer-events:none; /* clicks pass through to arrows */
+  pointer-events:none;
 }
 
-.page{
-  position:relative;
-  perspective:1200px;
-}
+.page{ position:relative; }
 
 .page-inner{
   position:absolute;
-  inset:0;
-  padding:22px 26px;
-  background-image:url("./memoire-assets/parchment.png");
-  background-size:cover;
-  background-position:center;
+  inset:10% 6%;
+  white-space:pre-line;
   color:#3a2517;
-  font-family:"Georgia", "Times New Roman", serif;
-  font-size:0.95rem;
+  font-size:1rem;
   line-height:1.6;
-  overflow:hidden;
-  box-shadow:inset 0 0 18px rgba(0,0,0,0.35);
-  transform-origin:left center;
-  transition:transform 0.45s ease, opacity 0.45s ease;
+  text-align:left;
 }
 
-.page.right .page-inner{
-  transform-origin:left center;
-}
-
-/* Page turn animation */
-.turn-forward{
-  transform:rotateY(-40deg);
-  opacity:0.0;
-}
-
-.turn-back{
-  transform:rotateY(40deg);
-  opacity:0.0;
-}
-
-/* Nav arrows */
 .nav-btn{
   position:absolute;
   top:50%;
   transform:translateY(-50%);
-  border:none;
   background:none;
-  padding:0;
+  border:none;
   cursor:pointer;
-  z-index:15;
+  z-index:20;
 }
 
-.nav-btn img{
-  width:40px;
-  height:auto;
-}
+.nav-btn.left{ left:4%; }
+.nav-btn.right{ right:4%; }
 
-.nav-btn.left{
-  left:4%;
-}
+.nav-btn img{ width:40px; }
 
-.nav-btn.right{
-  right:4%;
-}
-
-/* =========================
-   Editor
-   ========================= */
+/* EDITOR */
 .editor{
   width:100%;
   height:100%;
   display:flex;
   align-items:center;
   justify-content:center;
-  padding:28px 12px;
 }
 
 #editor-scroll{
-  max-width:900px;
-  width:min(90vw, 900px);
+  width:min(90vw,900px);
   max-height:80vh;
-  overflow:auto; /* only this scrolls */
-  padding:8px;
+  overflow:auto;
+  padding:10px;
 }
 
 #editor-page{
   min-height:70vh;
-  padding:28px 32px 40px;
+  padding:28px 32px;
   background-image:url("./memoire-assets/parchment.png");
   background-size:cover;
   background-position:center;
   border-radius:10px;
-  box-shadow:
-    0 18px 35px rgba(0,0,0,0.85),
-    inset 0 0 18px rgba(0,0,0,0.35);
   color:#3a2517;
-  font-family:"Georgia", "Times New Roman", serif;
-  font-size:1rem;
-  line-height:1.7;
+  line-height:1.6;
+  white-space:pre-wrap;
   outline:none;
-}
-
-/* Small screens tweaks */
-@media (max-width:700px){
-  .card{
-    max-width:90vw;
-  }
-  #reader-frame{
-    width:96vw;
-  }
-  #pages{
-    inset:8% 7%;
-  }
 }
