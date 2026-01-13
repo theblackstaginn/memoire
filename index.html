@@ -11,7 +11,7 @@
   <!-- DESK SCENE -->
   <div id="scene">
     <img id="desk-bg" src="./memoire-assets/desk.png" alt="Desk with journal" />
-    <button id="book-hitbox" aria-label="Open journal">
+    <button id="book-hitbox" type="button" aria-label="Open journal">
       <img src="./memoire-assets/book.png" alt="Closed journal" />
     </button>
   </div>
@@ -23,7 +23,7 @@
     <div id="warning-modal" class="modal card">
       <div class="modal-header">
         <img src="./memoire-assets/quill-icon.png" class="modal-icon" alt="">
-        <button class="icon-button" id="warning-close">
+        <button class="icon-button" id="warning-close" type="button">
           <img src="./memoire-assets/x-button.png" alt="">
         </button>
       </div>
@@ -31,8 +31,8 @@
         <p><strong>Warning:</strong> explicit adult content. 😉</p>
       </div>
       <div class="modal-footer">
-        <button id="warning-leave" class="btn secondary">Leave</button>
-        <button id="warning-ok" class="btn primary">OK</button>
+        <button id="warning-leave" class="btn secondary" type="button">Leave</button>
+        <button id="warning-ok" class="btn primary" type="button">OK</button>
       </div>
     </div>
 
@@ -40,25 +40,25 @@
     <div id="mode-modal" class="modal card hidden">
       <div class="modal-header">
         <img src="./memoire-assets/read-icon.png" class="modal-icon" alt="">
-        <button class="icon-button" id="mode-close">
+        <button class="icon-button" id="mode-close" type="button">
           <img src="./memoire-assets/x-button.png" alt="">
         </button>
       </div>
       <div class="modal-body">
         <p>What would you like to do?</p>
         <div class="mode-buttons">
-          <button id="mode-read" class="mode-btn">
+          <button id="mode-read" class="mode-btn" type="button">
             <img src="./memoire-assets/read-icon.png" alt="">
             <span>Read</span>
           </button>
-          <button id="mode-edit" class="mode-btn">
+          <button id="mode-edit" class="mode-btn" type="button">
             <img src="./memoire-assets/quill-icon.png" alt="">
             <span>Edit</span>
           </button>
         </div>
       </div>
       <div class="modal-footer">
-        <button id="mode-back" class="btn secondary">&larr; Back</button>
+        <button id="mode-back" class="btn secondary" type="button">&larr; Back</button>
       </div>
     </div>
 
@@ -66,7 +66,7 @@
     <div id="password-modal" class="modal card hidden">
       <div class="modal-header">
         <img src="./memoire-assets/quill-icon.png" class="modal-icon" alt="">
-        <button class="icon-button" id="password-close">
+        <button class="icon-button" id="password-close" type="button">
           <img src="./memoire-assets/x-button.png" alt="">
         </button>
       </div>
@@ -78,14 +78,14 @@
         <p id="password-error" class="error hidden">Incorrect password.</p>
       </div>
       <div class="modal-footer">
-        <button id="password-cancel" class="btn secondary">Cancel</button>
-        <button id="password-submit" class="btn primary">Unlock</button>
+        <button id="password-cancel" class="btn secondary" type="button">Cancel</button>
+        <button id="password-submit" class="btn primary" type="button">Unlock</button>
       </div>
     </div>
 
     <!-- 3. READER MODAL -->
     <div id="reader-modal" class="modal reader hidden">
-      <button class="icon-button close-top-right" id="reader-close">
+      <button class="icon-button close-top-right" id="reader-close" type="button">
         <img src="./memoire-assets/x-button.png" alt="">
       </button>
 
@@ -101,10 +101,10 @@
           </div>
         </div>
 
-        <button id="prev-page" class="nav-btn left">
+        <button id="prev-page" class="nav-btn left" type="button">
           <img src="./memoire-assets/back-button.png" alt="">
         </button>
-        <button id="next-page" class="nav-btn right">
+        <button id="next-page" class="nav-btn right" type="button">
           <img src="./memoire-assets/forward-button.png" alt="">
         </button>
       </div>
@@ -112,7 +112,7 @@
 
     <!-- 4. EDITOR MODAL -->
     <div id="editor-modal" class="modal editor hidden">
-      <button class="icon-button close-top-right" id="editor-close">
+      <button class="icon-button close-top-right" id="editor-close" type="button">
         <img src="./memoire-assets/x-button.png" alt="">
       </button>
       <div id="editor-scroll">
@@ -124,7 +124,7 @@
 
   </div>
 
-  <!-- INLINE JS: IGNORE app.js FOR NOW -->
+  <!-- INLINE JS SO MOBILE CAN'T "LOSE" IT -->
   <script>
     document.addEventListener('DOMContentLoaded', function () {
       const overlay = document.getElementById('modal-overlay');
@@ -167,10 +167,10 @@
       const EDIT_PASSWORD = "memoire!"; // change if you want
 
       const pages = [
-        "Page 1\n\nThis is a placeholder entry. Replace with your real content.",
-        "Page 2\n\nEverything loads directly over the parchment.",
-        "Page 3\n\nMore content...",
-        "Page 4\n\nMore content..."
+        "Page 1\\n\\nThis is a placeholder entry. Replace with your real content.",
+        "Page 2\\n\\nEverything loads directly over the parchment.",
+        "Page 3\\n\\nMore content...",
+        "Page 4\\n\\nMore content..."
       ];
       let index = 0;
 
