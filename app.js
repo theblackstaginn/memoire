@@ -36,6 +36,9 @@ const rightPage = document.getElementById('page-right');
 const editorModal = document.getElementById('editor-modal');
 const editorClose = document.getElementById('editor-close');
 
+// just to prove JS is actually running:
+document.title = "Memoire • live";
+
 // ======= CONTENT =======
 const pages = [
   "Page 1\n\nThis is a placeholder entry. Replace with your real content.",
@@ -47,8 +50,8 @@ const pages = [
 let index = 0;
 
 // ======= UTILS =======
-function show(el){ el.classList.remove('hidden'); }
-function hide(el){ el.classList.add('hidden'); }
+function show(el){ el && el.classList.remove('hidden'); }
+function hide(el){ el && el.classList.add('hidden'); }
 
 function exitAll(){
   hide(warningModal);
@@ -60,31 +63,109 @@ function exitAll(){
 }
 
 // ======= OPEN SEQUENCE =======
-book.addEventListener('click',()=>{
-  show(overlay);
-  show(warningModal);
-});
+if (book) {
+  book.addEventListener('click', () => {
+    show(overlay);
+    show(warningModal);
+  });
+}
 
 // warning
-warningOk.addEventListener('click',()=>{
-  hide(warningModal);
-  show(modeModal);
-});
+if (warningOk) {
+  warningOk.addEventListener('click', () => {
+    hide(warningModal);
+    show(modeModal);
+  });
+}
 
-warningLeave.addEventListener('click',exitAll);
-warningClose.addEventListener('click',exitAll);
+if (warningLeave) warningLeave.addEventListener('click', exitAll);
+if (warningClose) warningClose.addEventListener('click', exitAll);
 
 // mode
-modeBack.addEventListener('click',()=>{
-  hide(modeModal);
-  show(warningModal);
-});
+if (modeBack) {
+  modeBack.addEventListener('click', () => {
+    hide(modeModal);
+    show(warningModal);
+  });
+}
 
-modeClose.addEventListener('click',exitAll);
+if (modeClose) modeClose.addEventListener('click', exitAll);
 
 // read
-modeRead.addEventListener('click',()=>{
-  hide(modeModal);
-  index = 0;
-  renderPages();
-  show(readerModal);
+if (modeRead) {
+  modeRead.addEventListener('click', () => {
+    hide(modeModal);
+    index = 0;
+    renderPages();
+    show(readerModal);
+  });
+}
+
+// edit (opens password modal)
+if (modeEdit) {
+  modeEdit.addEventListener('click', () => {
+    hide(modeModal);
+    if (passwordInput) passwordInput.value = "";
+    hide(passwordError);
+    show(passwordModal);
+  });
+}
+
+// ======= PASSWORD HANDLING =======
+const EDIT_PASSWORD = "memoire!"; // change this if you want
+
+if (passwordSubmit) {
+  passwordSubmit.addEventListener('click', () => {
+    if (!passwordInput) return;
+
+    if (passwordInput.value === EDIT_PASSWORD) {
+      hide(passwordModal);
+      show(editorModal);
+    } else {
+      show(passwordError);
+    }
+  });
+}
+
+if (passwordCancel) {
+  passwordCancel.addEventListener('click', () => {
+    hide(passwordModal);
+    show(modeModal);
+  });
+}
+
+if (passwordClose) {
+  passwordClose.addEventListener('click', () => {
+    hide(passwordModal);
+    show(modeModal);
+  });
+}
+
+// ======= READER =======
+if (readerClose) readerClose.addEventListener('click', exitAll);
+
+function renderPages(){
+  if (leftPage)  leftPage.textContent  = pages[index] || "";
+  if (rightPage) rightPage.textContent = pages[index+1] || "";
+}
+
+if (nextBtn) {
+  nextBtn.addEventListener('click', () => {
+    if (index + 2 < pages.length) {
+      index += 2;
+      renderPages();
+    }
+  });
+}
+
+if (prevBtn) {
+  prevBtn.addEventListener('click', () => {
+    if (index - 2 >= 0) {
+      index -= 2;
+      renderPages();
+    }
+  });
+}
+
+// ======= EDITOR =======
+if (editorClose) editorClose.addEventListener('click', exitAll);
