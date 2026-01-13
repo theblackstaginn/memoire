@@ -35,15 +35,21 @@ html, body{
 /* Centered book */
 #book-hitbox{
   position:absolute;
-  bottom:8%;
+  top:50%;
   left:50%;
-  transform:translateX(-50%);
+  transform:translate(-50%, -50%);
   width:22%;
   max-width:360px;
   border:none;
   background:none;
   padding:0;
   cursor:pointer;
+}
+@media (max-width: 600px){
+  #book-hitbox{
+    top:60%;
+    width:32%;
+  }
 }
 
 #book-hitbox img{ width:100%; display:block; }
