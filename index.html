@@ -11,7 +11,6 @@
   <!-- DESK SCENE -->
   <div id="scene">
     <img id="desk-bg" src="./memoire-assets/desk.png" alt="Desk with journal" />
-    <!-- Clickable book on the desk -->
     <button id="book-hitbox" aria-label="Open journal">
       <img src="./memoire-assets/book.png" alt="Closed journal" />
     </button>
@@ -20,19 +19,16 @@
   <!-- GLOBAL MODAL OVERLAY -->
   <div id="modal-overlay" class="hidden">
 
-    <!-- 1. WARNING MODAL (OK / LEAVE) -->
+    <!-- 1. WARNING MODAL -->
     <div id="warning-modal" class="modal card">
       <div class="modal-header">
         <img src="./memoire-assets/quill-icon.png" class="modal-icon" alt="">
-        <button class="icon-button" id="warning-close" aria-label="Close warning">
+        <button class="icon-button" id="warning-close">
           <img src="./memoire-assets/x-button.png" alt="">
         </button>
       </div>
       <div class="modal-body">
-        <p>
-          This is a private journal. By continuing, you agree not to alter these pages
-          without intention.
-        </p>
+        <p><strong>Warning:</strong> explicit adult content. 😉</p>
       </div>
       <div class="modal-footer">
         <button id="warning-leave" class="btn secondary">Leave</button>
@@ -40,11 +36,11 @@
       </div>
     </div>
 
-    <!-- 2. MODE CHOOSER (READ / EDIT) -->
+    <!-- 2. MODE CHOOSER -->
     <div id="mode-modal" class="modal card hidden">
       <div class="modal-header">
         <img src="./memoire-assets/read-icon.png" class="modal-icon" alt="">
-        <button class="icon-button" id="mode-close" aria-label="Close mode menu">
+        <button class="icon-button" id="mode-close">
           <img src="./memoire-assets/x-button.png" alt="">
         </button>
       </div>
@@ -66,17 +62,36 @@
       </div>
     </div>
 
-    <!-- 3. READER MODAL (TWO-PAGE, PAGE TURNING) -->
+    <!-- 2B. PASSWORD MODAL -->
+    <div id="password-modal" class="modal card hidden">
+      <div class="modal-header">
+        <img src="./memoire-assets/quill-icon.png" class="modal-icon" alt="">
+        <button class="icon-button" id="password-close">
+          <img src="./memoire-assets/x-button.png" alt="">
+        </button>
+      </div>
+      <div class="modal-body">
+        <p>Enter password to unlock editor:</p>
+        <div class="input-row">
+          <input type="password" id="edit-password-input" placeholder="Password">
+        </div>
+        <p id="password-error" class="error hidden">Incorrect password.</p>
+      </div>
+      <div class="modal-footer">
+        <button id="password-cancel" class="btn secondary">Cancel</button>
+        <button id="password-submit" class="btn primary">Unlock</button>
+      </div>
+    </div>
+
+    <!-- 3. READER MODAL -->
     <div id="reader-modal" class="modal reader hidden">
-      <button class="icon-button close-top-right" id="reader-close" aria-label="Close reader">
+      <button class="icon-button close-top-right" id="reader-close">
         <img src="./memoire-assets/x-button.png" alt="">
       </button>
 
       <div id="reader-frame">
-        <!-- book frame -->
         <img src="./memoire-assets/open-book.png" id="reader-book" alt="Open book">
 
-        <!-- page content overlayed on the book -->
         <div id="pages">
           <div class="page left">
             <div class="page-inner" id="page-left"></div>
@@ -86,22 +101,20 @@
           </div>
         </div>
 
-        <!-- navigation arrows -->
-        <button id="prev-page" class="nav-btn left" aria-label="Previous pages">
+        <button id="prev-page" class="nav-btn left">
           <img src="./memoire-assets/back-button.png" alt="">
         </button>
-        <button id="next-page" class="nav-btn right" aria-label="Next pages">
+        <button id="next-page" class="nav-btn right">
           <img src="./memoire-assets/forward-button.png" alt="">
         </button>
       </div>
     </div>
 
-    <!-- 4. EDITOR MODAL (FULLSCREEN PARCHMENT EDITOR) -->
+    <!-- 4. EDITOR MODAL -->
     <div id="editor-modal" class="modal editor hidden">
-      <button class="icon-button close-top-right" id="editor-close" aria-label="Close editor">
+      <button class="icon-button close-top-right" id="editor-close">
         <img src="./memoire-assets/x-button.png" alt="">
       </button>
-      <!-- Only THIS scrolls; overlay itself stays fixed -->
       <div id="editor-scroll">
         <div id="editor-page" contenteditable="true">
           Start writing your entry here...
