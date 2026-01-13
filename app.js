@@ -1,6 +1,3 @@
-// =====================
-// Element hooks
-// =====================
 const modalOverlay = document.getElementById('modal-overlay');
 
 const bookHitbox   = document.getElementById('book-hitbox');
@@ -30,10 +27,6 @@ const rightPageEl = document.getElementById('page-right');
 const editorModal  = document.getElementById('editor-modal');
 const editorClose  = document.getElementById('editor-close');
 
-// =====================
-// Simple journal content
-// (placeholder — you can load from storage later)
-// =====================
 const pages = [
   "Page 1\n\nThis is a placeholder entry. You can wire this to real data later.",
   "Page 2\n\nThe left and right pages always move together as a spread.",
@@ -41,36 +34,27 @@ const pages = [
   "Page 4\n\nYou can replace this content with anything you want."
 ];
 
-let spreadIndex = 0; // left page index (0,2,4,...)
+let spreadIndex = 0;
 
-// =====================
-// Helper: show/hide
-// =====================
 function showOverlay(){
   modalOverlay.classList.remove('hidden');
 }
-
 function hideOverlay(){
   modalOverlay.classList.add('hidden');
 }
-
 function show(modal){
   modal.classList.remove('hidden');
 }
-
 function hide(modal){
   modal.classList.add('hidden');
 }
 
-// =====================
 // Scene → Warning
-// =====================
 bookHitbox.addEventListener('click', () => {
   showOverlay();
   show(warningModal);
 });
 
-// Warning actions
 function exitToDesk(){
   hide(warningModal);
   hide(modeModal);
@@ -82,15 +66,12 @@ function exitToDesk(){
 warningLeave.addEventListener('click', exitToDesk);
 warningClose.addEventListener('click', exitToDesk);
 
-// OK ⇒ mode chooser
 warningOk.addEventListener('click', () => {
   hide(warningModal);
   show(modeModal);
 });
 
-// =====================
 // Mode chooser
-// =====================
 modeBack.addEventListener('click', () => {
   hide(modeModal);
   show(warningModal);
@@ -98,21 +79,17 @@ modeBack.addEventListener('click', () => {
 
 modeClose.addEventListener('click', exitToDesk);
 
-// READ
 modeRead.addEventListener('click', () => {
   hide(modeModal);
   openReader();
 });
 
-// EDIT
 modeEdit.addEventListener('click', () => {
   hide(modeModal);
   openEditor();
 });
 
-// =====================
 // Reader logic
-// =====================
 function renderSpread(){
   const leftText  = pages[spreadIndex]     || "";
   const rightText = pages[spreadIndex + 1] || "";
@@ -134,11 +111,9 @@ function closeReader(){
 
 readerClose.addEventListener('click', closeReader);
 
-// Simple page-turn animation helper
 function animateTurn(direction){
   const rightInner = rightPageEl;
   const leftInner  = leftPageEl;
-
   const className = direction === 'forward' ? 'turn-forward' : 'turn-back';
 
   rightInner.classList.add(className);
@@ -151,7 +126,7 @@ function animateTurn(direction){
 }
 
 nextPageBtn.addEventListener('click', () => {
-  if (spreadIndex + 2 >= pages.length) return; // no more pages
+  if (spreadIndex + 2 >= pages.length) return;
   animateTurn('forward');
   setTimeout(() => {
     spreadIndex += 2;
@@ -168,16 +143,12 @@ prevPageBtn.addEventListener('click', () => {
   }, 220);
 });
 
-// =====================
-// Editor logic
-// =====================
+// Editor
 function openEditor(){
   show(editorModal);
 }
-
 function closeEditor(){
   hide(editorModal);
   hideOverlay();
 }
-
 editorClose.addEventListener('click', closeEditor);
