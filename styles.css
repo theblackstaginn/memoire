@@ -234,3 +234,40 @@ html, body{
   white-space:pre-wrap;
   outline:none;
 }
+
+/* MODE CHOOSER BUTTONS */
+.mode-buttons{
+  display:flex;
+  gap:12px;
+  margin-top:10px;
+}
+
+.mode-btn{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:6px;
+  border-radius:14px;
+  border:1px solid rgba(248,239,222,0.28);
+  background:rgba(21,13,8,0.9);
+  padding:10px 8px;
+  cursor:pointer;
+}
+
+.mode-btn img{
+  width:26px;
+  height:26px;
+}
+
+.mode-btn span{
+  font-size:0.9rem;
+}
+
+/* Slightly bigger book on small screens */
+@media (max-width: 600px){
+  #book-hitbox{
+    width:32%;
+    bottom:6%;
+  }
+}
