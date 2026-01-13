@@ -1,10 +1,116 @@
 <!doctype html>
-<html>
-  <head>
-    <meta charset="utf-8" />
-    <title>MEMOIRE TEST</title>
-  </head>
-  <body style="background:#111;color:#0f0;font-size:3rem;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;">
-    LIVE TEST 123
-  </body>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Memoire</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- DESK SCENE -->
+  <div id="scene">
+    <img id="desk-bg" src="./memoire-assets/desk.png" alt="Desk with journal" />
+    <!-- Clickable book on the desk -->
+    <button id="book-hitbox" aria-label="Open journal">
+      <img src="./memoire-assets/book.png" alt="Closed journal" />
+    </button>
+  </div>
+
+  <!-- GLOBAL MODAL OVERLAY -->
+  <div id="modal-overlay" class="hidden">
+
+    <!-- 1. WARNING MODAL (OK / LEAVE) -->
+    <div id="warning-modal" class="modal card">
+      <div class="modal-header">
+        <img src="./memoire-assets/quill-icon.png" class="modal-icon" alt="">
+        <button class="icon-button" id="warning-close" aria-label="Close warning">
+          <img src="./memoire-assets/x-button.png" alt="">
+        </button>
+      </div>
+      <div class="modal-body">
+        <p>
+          This is a private journal. By continuing, you agree not to alter these pages
+          without intention.
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button id="warning-leave" class="btn secondary">Leave</button>
+        <button id="warning-ok" class="btn primary">OK</button>
+      </div>
+    </div>
+
+    <!-- 2. MODE CHOOSER (READ / EDIT) -->
+    <div id="mode-modal" class="modal card hidden">
+      <div class="modal-header">
+        <img src="./memoire-assets/read-icon.png" class="modal-icon" alt="">
+        <button class="icon-button" id="mode-close" aria-label="Close mode menu">
+          <img src="./memoire-assets/x-button.png" alt="">
+        </button>
+      </div>
+      <div class="modal-body">
+        <p>What would you like to do?</p>
+        <div class="mode-buttons">
+          <button id="mode-read" class="mode-btn">
+            <img src="./memoire-assets/read-icon.png" alt="">
+            <span>Read</span>
+          </button>
+          <button id="mode-edit" class="mode-btn">
+            <img src="./memoire-assets/quill-icon.png" alt="">
+            <span>Edit</span>
+          </button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="mode-back" class="btn secondary">&larr; Back</button>
+      </div>
+    </div>
+
+    <!-- 3. READER MODAL (TWO-PAGE, PAGE TURNING) -->
+    <div id="reader-modal" class="modal reader hidden">
+      <button class="icon-button close-top-right" id="reader-close" aria-label="Close reader">
+        <img src="./memoire-assets/x-button.png" alt="">
+      </button>
+
+      <div id="reader-frame">
+        <!-- book frame -->
+        <img src="./memoire-assets/open-book.png" id="reader-book" alt="Open book">
+
+        <!-- page content overlayed on the book -->
+        <div id="pages">
+          <div class="page left">
+            <div class="page-inner" id="page-left"></div>
+          </div>
+          <div class="page right">
+            <div class="page-inner" id="page-right"></div>
+          </div>
+        </div>
+
+        <!-- navigation arrows -->
+        <button id="prev-page" class="nav-btn left" aria-label="Previous pages">
+          <img src="./memoire-assets/back-button.png" alt="">
+        </button>
+        <button id="next-page" class="nav-btn right" aria-label="Next pages">
+          <img src="./memoire-assets/forward-button.png" alt="">
+        </button>
+      </div>
+    </div>
+
+    <!-- 4. EDITOR MODAL (FULLSCREEN PARCHMENT EDITOR) -->
+    <div id="editor-modal" class="modal editor hidden">
+      <button class="icon-button close-top-right" id="editor-close" aria-label="Close editor">
+        <img src="./memoire-assets/x-button.png" alt="">
+      </button>
+      <!-- Only THIS scrolls; overlay itself stays fixed -->
+      <div id="editor-scroll">
+        <div id="editor-page" contenteditable="true">
+          Start writing your entry here...
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="app.js" defer></script>
+</body>
 </html>
