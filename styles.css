@@ -9,13 +9,15 @@ html, body{
   padding:0;
   height:100%;
   width:100%;
-  overflow:hidden;
+  overflow:hidden;  /* no page scroll; modals handle their own */
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", serif;
   background:#000;
   color:#f5f1ea;
 }
 
-/* Scene */
+/* =========================
+   Scene (desk + book)
+   ========================= */
 #scene{
   position:relative;
   width:100vw;
@@ -35,16 +37,21 @@ html, body{
   object-fit:cover;
 }
 
+/* Click area for the book */
 #book-hitbox{
   position:absolute;
   border:none;
   background:none;
   padding:0;
   cursor:pointer;
-  width:25%;
-  max-width:420px;
-  bottom:12%;
-  right:18%;
+
+  /* size */
+  width:22%;
+  max-width:360px;
+
+  /* POSITION — tweak these two to sit perfectly on the desk image */
+  bottom:8%;   /* move up/down */
+  right:12%;   /* move left/right */
 }
 
 #book-hitbox img{
@@ -53,7 +60,9 @@ html, body{
   display:block;
 }
 
-/* Overlay */
+/* =========================
+   Modal overlay
+   ========================= */
 .hidden{
   display:none !important;
 }
@@ -66,13 +75,14 @@ html, body{
   justify-content:center;
   background:rgba(0,0,0,0.75);
   z-index:1000;
-  overflow:hidden;
+  overflow:hidden; /* overlay itself never scrolls */
 }
 
 .modal{
   position:relative;
 }
 
+/* Card-style modals (warning + mode chooser) */
 .card{
   min-width:280px;
   max-width:420px;
@@ -108,6 +118,7 @@ html, body{
   gap:10px;
 }
 
+/* Buttons */
 .btn{
   border-radius:999px;
   padding:7px 16px;
@@ -133,6 +144,7 @@ html, body{
   transform:translateY(1px);
 }
 
+/* Icon buttons (X) */
 .icon-button{
   border:none;
   background:none;
@@ -145,6 +157,7 @@ html, body{
   height:22px;
 }
 
+/* Mode buttons */
 .mode-buttons{
   display:flex;
   gap:12px;
@@ -173,7 +186,9 @@ html, body{
   font-size:0.9rem;
 }
 
-/* Reader */
+/* =========================
+   Reader (open book)
+   ========================= */
 .reader{
   width:100%;
   height:100%;
@@ -204,12 +219,13 @@ html, body{
   display:block;
 }
 
+/* Pages overlay */
 #pages{
   position:absolute;
   inset:7% 10%;
   display:grid;
   grid-template-columns:1fr 1fr;
-  pointer-events:none;
+  pointer-events:none; /* clicks pass through to arrows */
 }
 
 .page{
@@ -238,6 +254,7 @@ html, body{
   transform-origin:left center;
 }
 
+/* Page turn animation */
 .turn-forward{
   transform:rotateY(-40deg);
   opacity:0.0;
@@ -248,6 +265,7 @@ html, body{
   opacity:0.0;
 }
 
+/* Nav arrows */
 .nav-btn{
   position:absolute;
   top:50%;
@@ -272,7 +290,9 @@ html, body{
   right:4%;
 }
 
-/* Editor */
+/* =========================
+   Editor
+   ========================= */
 .editor{
   width:100%;
   height:100%;
@@ -286,7 +306,7 @@ html, body{
   max-width:900px;
   width:min(90vw, 900px);
   max-height:80vh;
-  overflow:auto;
+  overflow:auto; /* only this scrolls */
   padding:8px;
 }
 
@@ -307,6 +327,7 @@ html, body{
   outline:none;
 }
 
+/* Small screens tweaks */
 @media (max-width:700px){
   .card{
     max-width:90vw;
