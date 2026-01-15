@@ -63,7 +63,7 @@ body {
 
 /* Tune these once loaded */
 #book-hitbox {
-  left: 48%;
+  left: 50%;
   top: 55%;
   width: 27%;
 }
@@ -71,7 +71,7 @@ body {
 #pen-hitbox {
   left: 70%;
   top: 50%;
-  width: 15%;
+  width: 17%;
 }
 
 @media (hover: hover) and (pointer: fine) {
