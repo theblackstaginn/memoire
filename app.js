@@ -1,171 +1,120 @@
-// ======= ELEMENTS =======
-const overlay = document.getElementById('modal-overlay');
+// Memoire – interaction logic
 
-const book = document.getElementById('book-hitbox');
+// Change to whatever you want
+const PASSWORD = "stag";
 
-// warning
-const warningModal = document.getElementById('warning-modal');
-const warningOk = document.getElementById('warning-ok');
-const warningLeave = document.getElementById('warning-leave');
-const warningClose = document.getElementById('warning-close');
+// Overlay + modals
+const overlay       = document.getElementById("modal-overlay");
+const warningModal  = document.getElementById("warning-modal");
+const passwordModal = document.getElementById("password-modal");
+const readerModal   = document.getElementById("reader-modal");
+const editModal     = document.getElementById("edit-modal");
 
-// mode
-const modeModal = document.getElementById('mode-modal');
-const modeRead = document.getElementById('mode-read');
-const modeEdit = document.getElementById('mode-edit');
-const modeBack = document.getElementById('mode-back');
-const modeClose = document.getElementById('mode-close');
+const modals = [warningModal, passwordModal, readerModal, editModal];
 
-// password
-const passwordModal = document.getElementById('password-modal');
-const passwordInput = document.getElementById('edit-password-input');
-const passwordSubmit = document.getElementById('password-submit');
-const passwordCancel = document.getElementById('password-cancel');
-const passwordClose = document.getElementById('password-close');
-const passwordError = document.getElementById('password-error');
+// Desk buttons
+const bookHitbox = document.getElementById("book-hitbox");
+const penHitbox  = document.getElementById("pen-hitbox");
 
-// reader
-const readerModal = document.getElementById('reader-modal');
-const readerClose = document.getElementById('reader-close');
-const prevBtn = document.getElementById('prev-page');
-const nextBtn = document.getElementById('next-page');
-const leftPage = document.getElementById('page-left');
-const rightPage = document.getElementById('page-right');
+// Warning buttons
+const btnWarningLeave = document.getElementById("btn-warning-leave");
+const btnWarningOk    = document.getElementById("btn-warning-ok");
 
-// editor
-const editorModal = document.getElementById('editor-modal');
-const editorClose = document.getElementById('editor-close');
+// Password controls
+const passwordInput = document.getElementById("password-input");
+const passwordError = document.getElementById("password-error");
+const btnPwdCancel  = document.getElementById("btn-password-cancel");
+const btnPwdSubmit  = document.getElementById("btn-password-submit");
 
-// just to prove JS is actually running:
-document.title = "Memoire • live";
+// Reader close
+const btnReaderClose = document.getElementById("btn-reader-close");
 
-// ======= CONTENT =======
-const pages = [
-  "Page 1\n\nThis is a placeholder entry. Replace with your real content.",
-  "Page 2\n\nEverything loads directly over the parchment.",
-  "Page 3\n\nMore content...",
-  "Page 4\n\nMore content..."
-];
+// Edit close
+const btnEditClose = document.getElementById("btn-edit-close");
 
-let index = 0;
+// ===== Helpers =====
 
-// ======= UTILS =======
-function show(el){ el && el.classList.remove('hidden'); }
-function hide(el){ el && el.classList.add('hidden'); }
-
-function exitAll(){
-  hide(warningModal);
-  hide(modeModal);
-  hide(passwordModal);
-  hide(readerModal);
-  hide(editorModal);
-  hide(overlay);
+function hideAllModals() {
+  modals.forEach((m) => m && m.classList.add("hidden"));
 }
 
-// ======= OPEN SEQUENCE =======
-if (book) {
-  book.addEventListener('click', () => {
-    show(overlay);
-    show(warningModal);
+function openModal(modal) {
+  overlay.classList.remove("hidden");
+  hideAllModals();
+  modal.classList.remove("hidden");
+}
+
+function closeOverlay() {
+  overlay.classList.add("hidden");
+  hideAllModals();
+}
+
+// ===== Book Flow: warning -> read =====
+
+if (bookHitbox) {
+  bookHitbox.addEventListener("click", () => openModal(warningModal));
+}
+
+if (btnWarningLeave) {
+  btnWarningLeave.addEventListener("click", closeOverlay);
+}
+
+if (btnWarningOk) {
+  btnWarningOk.addEventListener("click", () => openModal(readerModal));
+}
+
+if (btnReaderClose) {
+  btnReaderClose.addEventListener("click", closeOverlay);
+}
+
+// ===== Pen Flow: password -> edit =====
+
+if (penHitbox) {
+  penHitbox.addEventListener("click", () => {
+    passwordInput.value = "";
+    passwordError.classList.add("hidden");
+    openModal(passwordModal);
+    setTimeout(() => passwordInput.focus(), 50);
   });
 }
 
-// warning
-if (warningOk) {
-  warningOk.addEventListener('click', () => {
-    hide(warningModal);
-    show(modeModal);
-  });
+function submitPassword() {
+  const value = passwordInput.value.trim();
+  if (value === PASSWORD) {
+    passwordError.classList.add("hidden");
+    openModal(editModal);
+  } else {
+    passwordError.classList.remove("hidden");
+  }
 }
 
-if (warningLeave) warningLeave.addEventListener('click', exitAll);
-if (warningClose) warningClose.addEventListener('click', exitAll);
-
-// mode
-if (modeBack) {
-  modeBack.addEventListener('click', () => {
-    hide(modeModal);
-    show(warningModal);
-  });
+if (btnPwdSubmit) {
+  btnPwdSubmit.addEventListener("click", submitPassword);
 }
 
-if (modeClose) modeClose.addEventListener('click', exitAll);
-
-// read
-if (modeRead) {
-  modeRead.addEventListener('click', () => {
-    hide(modeModal);
-    index = 0;
-    renderPages();
-    show(readerModal);
-  });
-}
-
-// edit (opens password modal)
-if (modeEdit) {
-  modeEdit.addEventListener('click', () => {
-    hide(modeModal);
-    if (passwordInput) passwordInput.value = "";
-    hide(passwordError);
-    show(passwordModal);
-  });
-}
-
-// ======= PASSWORD HANDLING =======
-const EDIT_PASSWORD = "memoire!"; // change this if you want
-
-if (passwordSubmit) {
-  passwordSubmit.addEventListener('click', () => {
-    if (!passwordInput) return;
-
-    if (passwordInput.value === EDIT_PASSWORD) {
-      hide(passwordModal);
-      show(editorModal);
-    } else {
-      show(passwordError);
+if (passwordInput) {
+  passwordInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      submitPassword();
     }
   });
 }
 
-if (passwordCancel) {
-  passwordCancel.addEventListener('click', () => {
-    hide(passwordModal);
-    show(modeModal);
-  });
+if (btnPwdCancel) {
+  btnPwdCancel.addEventListener("click", closeOverlay);
 }
 
-if (passwordClose) {
-  passwordClose.addEventListener('click', () => {
-    hide(passwordModal);
-    show(modeModal);
-  });
+// ===== Edit Close =====
+
+if (btnEditClose) {
+  btnEditClose.addEventListener("click", closeOverlay);
 }
 
-// ======= READER =======
-if (readerClose) readerClose.addEventListener('click', exitAll);
+// ===== ESC Key =====
 
-function renderPages(){
-  if (leftPage)  leftPage.textContent  = pages[index] || "";
-  if (rightPage) rightPage.textContent = pages[index+1] || "";
-}
-
-if (nextBtn) {
-  nextBtn.addEventListener('click', () => {
-    if (index + 2 < pages.length) {
-      index += 2;
-      renderPages();
-    }
-  });
-}
-
-if (prevBtn) {
-  prevBtn.addEventListener('click', () => {
-    if (index - 2 >= 0) {
-      index -= 2;
-      renderPages();
-    }
-  });
-}
-
-// ======= EDITOR =======
-if (editorClose) editorClose.addEventListener('click', exitAll);
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && !overlay.classList.contains("hidden")) {
+    closeOverlay();
+  }
+});
