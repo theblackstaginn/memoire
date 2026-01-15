@@ -1,8 +1,15 @@
+console.log("Memoire app.js loaded");
+
 // ===== Supabase init (CDN global) =====
 const SUPABASE_URL = "https://eepfsaulkakeqfucewau.supabase.co";
 const SUPABASE_ANON_KEY = https://eepfsaulkakeqfucewau.supabase.co/;
 
-// Supabase global is injected by the CDN script in index.html
+if (typeof supabase === "undefined") {
+  console.error("Supabase global is not available. Check script tag order.");
+  alert("Supabase library failed to load. Check console.");
+}
+
+// If supabase is missing, this will throw, but we already logged above
 const { createClient } = supabase;
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -166,6 +173,7 @@ async function saveMemoireToSupabase() {
 
 if (authLogin) {
   authLogin.addEventListener("click", async () => {
+    console.log("Login button clicked");
     if (!authEmail.value || !authPassword.value) {
       alert("Enter email and password.");
       return;
@@ -201,12 +209,16 @@ if (authLogout) {
 (async () => {
   const user = await getCurrentUser();
   updateAuthUI(user);
+  console.log("Memoire initialized, user:", user);
 })();
 
 // ===== Book Flow: warning -> read =====
 
 if (bookHitbox) {
-  bookHitbox.addEventListener("click", () => openModal(warningModal));
+  bookHitbox.addEventListener("click", () => {
+    console.log("Book clicked");
+    openModal(warningModal);
+  });
 }
 
 if (btnWarningLeave) {
@@ -225,6 +237,7 @@ if (btnReaderClose) {
 
 if (penHitbox) {
   penHitbox.addEventListener("click", () => {
+    console.log("Pen clicked");
     if (passwordInput) passwordInput.value = "";
     if (passwordError) passwordError.classList.add("hidden");
     openModal(passwordModal);
