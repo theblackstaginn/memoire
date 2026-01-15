@@ -10,9 +10,26 @@
 
   <!-- DESK SCENE -->
   <div id="scene">
-    <img id="desk-bg" src="./memoire-assets/desk.png" alt="Desk with journal" />
-    <button id="book-hitbox" type="button" aria-label="Open journal">
-      <img src="./memoire-assets/book.png" alt="Closed journal" />
+    <img id="desk-bg" src="./memoire-assets/desk.png" alt="Desk background" />
+
+    <!-- Book = READ (warning first) -->
+    <button
+      id="book-hitbox"
+      class="hitbox"
+      type="button"
+      aria-label="Open memoirs"
+    >
+      <img src="./memoire-assets/book.png" alt="" />
+    </button>
+
+    <!-- Pen = EDIT (password gated) -->
+    <button
+      id="pen-hitbox"
+      class="hitbox"
+      type="button"
+      aria-label="Edit memoirs"
+    >
+      <img src="./memoire-assets/pen.png" alt="" />
     </button>
   </div>
 
@@ -20,271 +37,78 @@
   <div id="modal-overlay" class="hidden">
 
     <!-- 1. WARNING MODAL -->
-    <div id="warning-modal" class="modal card">
-      <div class="modal-header">
-        <!-- read icon = book -->
-        <img src="./memoire-assets/book.png" class="modal-icon" alt="">
-        <button class="icon-button" id="warning-close" type="button">
-          <img src="./memoire-assets/x-button.png" alt="">
+    <div id="warning-modal" class="modal card hidden">
+      <h2>Private Memoirs</h2>
+      <p>
+        These pages contain intimate memories. Reading on means you’re ready
+        to revisit them.
+      </p>
+      <div class="modal-actions">
+        <button id="btn-warning-leave" type="button" class="btn btn-secondary">
+          Leave
         </button>
-      </div>
-      <div class="modal-body">
-        <p><strong>Warning:</strong> explicit adult content. 😉</p>
-      </div>
-      <div class="modal-footer">
-        <button id="warning-leave" class="btn secondary" type="button">Leave</button>
-        <button id="warning-ok" class="btn primary" type="button">OK</button>
+        <button id="btn-warning-ok" type="button" class="btn btn-primary">
+          OK
+        </button>
       </div>
     </div>
 
-    <!-- 2. MODE CHOOSER -->
-    <div id="mode-modal" class="modal card hidden">
-      <div class="modal-header">
-        <!-- read icon -->
-        <img src="./memoire-assets/book.png" class="modal-icon" alt="">
-        <button class="icon-button" id="mode-close" type="button">
-          <img src="./memoire-assets/x-button.png" alt="">
-        </button>
-      </div>
-      <div class="modal-body">
-        <p>What would you like to do?</p>
-        <div class="mode-buttons">
-          <button id="mode-read" class="mode-btn" type="button">
-            <!-- read icon -->
-            <img src="./memoire-assets/book.png" alt="">
-            <span>Read</span>
-          </button>
-          <button id="mode-edit" class="mode-btn" type="button">
-            <!-- edit icon = quill -->
-            <img src="./memoire-assets/quill-icon.png" alt="">
-            <span>Edit</span>
-          </button>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button id="mode-back" class="btn secondary" type="button">&larr; Back</button>
-      </div>
-    </div>
-
-    <!-- 2B. PASSWORD MODAL -->
+    <!-- 2. PASSWORD MODAL -->
     <div id="password-modal" class="modal card hidden">
-      <div class="modal-header">
-        <!-- edit icon = quill -->
-        <img src="./memoire-assets/quill-icon.png" class="modal-icon" alt="">
-        <button class="icon-button" id="password-close" type="button">
-          <img src="./memoire-assets/x-button.png" alt="">
+      <h2>Edit Memoirs</h2>
+      <p>Enter the password to unlock edit mode.</p>
+      <label class="field">
+        <span>Password</span>
+        <input id="password-input" type="password" autocomplete="off" />
+      </label>
+      <p id="password-error" class="error hidden">Incorrect password. Try again.</p>
+      <div class="modal-actions">
+        <button id="btn-password-cancel" type="button" class="btn btn-secondary">
+          Cancel
         </button>
-      </div>
-      <div class="modal-body">
-        <p>Enter password to unlock editor:</p>
-        <div class="input-row">
-          <input type="password" id="edit-password-input" placeholder="Password">
-        </div>
-        <p id="password-error" class="error hidden">Incorrect password.</p>
-      </div>
-      <div class="modal-footer">
-        <button id="password-cancel" class="btn secondary" type="button">Cancel</button>
-        <button id="password-submit" class="btn primary" type="button">Unlock</button>
+        <button id="btn-password-submit" type="button" class="btn btn-primary">
+          Unlock
+        </button>
       </div>
     </div>
 
     <!-- 3. READER MODAL -->
-    <div id="reader-modal" class="modal reader hidden">
-      <button class="icon-button close-top-right" id="reader-close" type="button">
-        <img src="./memoire-assets/x-button.png" alt="">
-      </button>
-
-      <div id="reader-frame">
-        <img src="./memoire-assets/open-book.png" id="reader-book" alt="Open book">
-
-        <div id="pages">
-          <div class="page left">
-            <div class="page-inner" id="page-left"></div>
-          </div>
-          <div class="page right">
-            <div class="page-inner" id="page-right"></div>
-          </div>
-        </div>
-
-        <button id="prev-page" class="nav-btn left" type="button">
-          <img src="./memoire-assets/back-button.png" alt="">
+    <div id="reader-modal" class="modal sheet hidden">
+      <div class="sheet-header">
+        <button id="btn-reader-close" type="button" class="icon-btn">
+          <img src="./memoire-assets/x-button.png" alt="Close" />
         </button>
-        <button id="next-page" class="nav-btn right" type="button">
-          <img src="./memoire-assets/forward-button.png" alt="">
-        </button>
+        <h2>Memoirs – Read</h2>
+      </div>
+      <div class="sheet-body reader-body">
+        <img
+          src="./memoire-assets/open-book.png"
+          alt="Open memoir"
+          class="open-book-img"
+        />
       </div>
     </div>
 
     <!-- 4. EDITOR MODAL -->
-    <div id="editor-modal" class="modal editor hidden">
-      <button class="icon-button close-top-right" id="editor-close" type="button">
-        <img src="./memoire-assets/x-button.png" alt="">
-      </button>
-      <div id="editor-scroll">
-        <div id="editor-page" contenteditable="true">
-          Start writing your entry here...
+    <div id="edit-modal" class="modal sheet hidden">
+      <div class="sheet-header">
+        <button id="btn-edit-close" type="button" class="icon-btn">
+          <img src="./memoire-assets/x-button.png" alt="Close" />
+        </button>
+        <h2>Memoirs – Edit</h2>
+      </div>
+      <div class="sheet-body">
+        <div class="edit-wrapper">
+          <img src="./memoire-assets/parchment.png" alt="" class="edit-parchment" />
+          <div id="edit-area" class="edit-area" contenteditable="true">
+            Start writing…
+          </div>
         </div>
       </div>
     </div>
 
   </div>
 
-  <!-- INLINE JS -->
-  <script>
-    document.addEventListener('DOMContentLoaded', function () {
-      const overlay = document.getElementById('modal-overlay');
-
-      const book = document.getElementById('book-hitbox');
-
-      // warning
-      const warningModal = document.getElementById('warning-modal');
-      const warningOk = document.getElementById('warning-ok');
-      const warningLeave = document.getElementById('warning-leave');
-      const warningClose = document.getElementById('warning-close');
-
-      // mode
-      const modeModal = document.getElementById('mode-modal');
-      const modeRead = document.getElementById('mode-read');
-      const modeEdit = document.getElementById('mode-edit');
-      const modeBack = document.getElementById('mode-back');
-      const modeClose = document.getElementById('mode-close');
-
-      // password
-      const passwordModal = document.getElementById('password-modal');
-      const passwordInput = document.getElementById('edit-password-input');
-      const passwordSubmit = document.getElementById('password-submit');
-      const passwordCancel = document.getElementById('password-cancel');
-      const passwordClose = document.getElementById('password-close');
-      const passwordError = document.getElementById('password-error');
-
-      // reader
-      const readerModal = document.getElementById('reader-modal');
-      const readerClose = document.getElementById('reader-close');
-      const prevBtn = document.getElementById('prev-page');
-      const nextBtn = document.getElementById('next-page');
-      const leftPage = document.getElementById('page-left');
-      const rightPage = document.getElementById('page-right');
-
-      // editor
-      const editorModal = document.getElementById('editor-modal');
-      const editorClose = document.getElementById('editor-close');
-
-      const EDIT_PASSWORD = "memoire!";
-
-      const pages = [
-        "Page 1\n\nThis is a placeholder entry. Replace with your real content.",
-        "Page 2\n\nEverything loads directly over the parchment.",
-        "Page 3\n\nMore content...",
-        "Page 4\n\nMore content..."
-      ];
-      let index = 0;
-
-      function show(el){ el && el.classList.remove('hidden'); }
-      function hide(el){ el && el.classList.add('hidden'); }
-
-      function exitAll(){
-        hide(warningModal);
-        hide(modeModal);
-        hide(passwordModal);
-        hide(readerModal);
-        hide(editorModal);
-        hide(overlay);
-      }
-
-      function renderPages(){
-        if (leftPage)  leftPage.textContent  = pages[index] || "";
-        if (rightPage) rightPage.textContent = pages[index+1] || "";
-      }
-
-      if (book){
-        book.addEventListener('click', ()=>{
-          show(overlay);
-          show(warningModal);
-        });
-      }
-
-      if (warningOk){
-        warningOk.addEventListener('click', ()=>{
-          hide(warningModal);
-          show(modeModal);
-        });
-      }
-      if (warningLeave) warningLeave.addEventListener('click', exitAll);
-      if (warningClose) warningClose.addEventListener('click', exitAll);
-
-      if (modeBack){
-        modeBack.addEventListener('click', ()=>{
-          hide(modeModal);
-          show(warningModal);
-        });
-      }
-      if (modeClose) modeClose.addEventListener('click', exitAll);
-
-      if (modeRead){
-        modeRead.addEventListener('click', ()=>{
-          hide(modeModal);
-          index = 0;
-          renderPages();
-          show(readerModal);
-        });
-      }
-
-      if (modeEdit){
-        modeEdit.addEventListener('click', ()=>{
-          hide(modeModal);
-          passwordInput.value = "";
-          hide(passwordError);
-          show(passwordModal);
-        });
-      }
-
-      if (passwordSubmit){
-        passwordSubmit.addEventListener('click', ()=>{
-          if (passwordInput.value === EDIT_PASSWORD){
-            hide(passwordModal);
-            show(editorModal);
-          } else {
-            show(passwordError);
-          }
-        });
-      }
-
-      if (passwordCancel){
-        passwordCancel.addEventListener('click', ()=>{
-          hide(passwordModal);
-          show(modeModal);
-        });
-      }
-
-      if (passwordClose){
-        passwordClose.addEventListener('click', ()=>{
-          hide(passwordModal);
-          show(modeModal);
-        });
-      }
-
-      if (readerClose) readerClose.addEventListener('click', exitAll);
-
-      if (prevBtn){
-        prevBtn.addEventListener('click', ()=>{
-          if (index - 2 >= 0){
-            index -= 2;
-            renderPages();
-          }
-        });
-      }
-
-      if (nextBtn){
-        nextBtn.addEventListener('click', ()=>{
-          if (index + 2 < pages.length){
-            index += 2;
-            renderPages();
-          }
-        });
-      }
-
-      if (editorClose) editorClose.addEventListener('click', exitAll);
-    });
-  </script>
+  <script src="app.js"></script>
 </body>
 </html>
