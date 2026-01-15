@@ -69,9 +69,9 @@ body {
 }
 
 #pen-hitbox {
-  left: 80%;
-  top: 78%;
-  width: 12%;
+  left: 70%;
+  top: 50%;
+  width: 15%;
 }
 
 @media (hover: hover) and (pointer: fine) {
