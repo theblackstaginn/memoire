@@ -179,6 +179,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
   padding: 10px 16px;
   border-bottom: 1px solid rgba(244, 241, 234, 0.12);
 }
@@ -222,7 +223,7 @@ body {
   overflow: auto;
 }
 
-/* Reader */
+/* ===== READER (OPEN BOOK) ===== */
 
 .reader-body {
   display: flex;
@@ -230,13 +231,74 @@ body {
   justify-content: center;
 }
 
+.open-book-wrapper {
+  position: relative;
+  max-width: 900px;
+  width: 100%;
+}
+
 .open-book-img {
-  max-width: 100%;
-  max-height: 100%;
+  width: 100%;
+  height: auto;
   display: block;
 }
 
-/* Editor */
+/* The text areas sitting on top of each page */
+.page {
+  position: absolute;
+  top: 18%;
+  bottom: 14%;
+  width: 36%;
+  padding: 0 18px;
+  overflow: hidden;
+  color: #2b2217;
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: 1rem;
+  line-height: 1.5;
+  white-space: pre-wrap; /* respect line breaks */
+}
+
+.page-left {
+  left: 13%;
+}
+
+.page-right {
+  right: 13%;
+}
+
+/* Page nav buttons */
+
+.page-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.page-nav img {
+  width: 40px;
+  height: auto;
+  display: block;
+  filter: drop-shadow(0 0 5px rgba(0, 0, 0, 0.8));
+}
+
+.page-nav-left {
+  left: 2%;
+}
+
+.page-nav-right {
+  right: 2%;
+}
+
+.page-nav.disabled {
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+/* ===== EDITOR ===== */
 
 .edit-wrapper {
   position: relative;
@@ -320,11 +382,31 @@ body {
     width: 100vw;
     height: 100vh;
   }
+
   .edit-area {
     inset: 8% 5%;
   }
 
   .auth-inner {
     flex-wrap: wrap;
+  }
+
+  .page {
+    top: 16%;
+    bottom: 12%;
+    width: 40%;
+    padding: 0 10px;
+  }
+
+  .page-left {
+    left: 10%;
+  }
+
+  .page-right {
+    right: 10%;
+  }
+
+  .page-nav img {
+    width: 32px;
   }
 }
