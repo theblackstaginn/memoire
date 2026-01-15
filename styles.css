@@ -16,7 +16,8 @@
   box-sizing: border-box;
 }
 
-html, body {
+html,
+body {
   margin: 0;
   padding: 0;
   height: 100%;
@@ -25,7 +26,8 @@ html, body {
 body {
   background: var(--bg-dark);
   color: var(--text);
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
 }
 
 /* ========== AUTH BAR ========== */
@@ -58,7 +60,7 @@ body {
   padding: 4px 8px;
   border-radius: 999px;
   border: 1px solid rgba(244, 241, 234, 0.35);
-  background: rgba(0,0,0,0.4);
+  background: rgba(0, 0, 0, 0.4);
   color: var(--text);
   font-size: 0.8rem;
 }
@@ -83,9 +85,8 @@ body {
   object-fit: cover;
 }
 
-/* Hitboxes */
+/* ========== HITBOXES ========== */
 
-.hitbox is a button with positioned icons */
 .hitbox {
   position: absolute;
   border: none;
@@ -102,7 +103,7 @@ body {
   pointer-events: none;
 }
 
-/* Tune these once loaded */
+/* Initial positions */
 #book-hitbox {
   left: 50%;
   top: 55%;
@@ -188,7 +189,7 @@ body {
   letter-spacing: 0.05em;
 }
 
-/* X Button Fix */
+/* X Button */
 
 .icon-btn {
   border: none;
@@ -203,10 +204,10 @@ body {
   height: auto;
   display: block;
   object-fit: contain;
-  filter: drop-shadow(0 0 4px rgba(0,0,0,0.6));
+  filter: drop-shadow(0 0 4px rgba(0, 0, 0, 0.6));
 }
 
-/* Save button tweak */
+/* Save button */
 
 .btn-save {
   font-size: 0.8rem;
@@ -285,7 +286,7 @@ body {
 
 .btn-secondary {
   background: transparent;
-  border-color: rgba(244,241,234,0.4);
+  border-color: rgba(244, 241, 234, 0.4);
   color: var(--text);
 }
 
@@ -300,9 +301,9 @@ body {
 
 .field input {
   border-radius: 999px;
-  border: 1px solid rgba(244,241,234,0.4);
+  border: 1px solid rgba(244, 241, 234, 0.4);
   padding: 6px 10px;
-  background: rgba(0,0,0,0.35);
+  background: rgba(0, 0, 0, 0.35);
   color: var(--text);
 }
 
