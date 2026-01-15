@@ -1,10 +1,10 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-// ===== Supabase init =====
+// ===== Supabase init (CDN global) =====
 const SUPABASE_URL = "https://eepfsaulkakeqfucewau.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_kXKPON3Ass12XEj7KAdlzw_7JkNjUpL;
+const SUPABASE_ANON_KEY = https://eepfsaulkakeqfucewau.supabase.co/;
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// Supabase global is injected by the CDN script in index.html
+const { createClient } = supabase;
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // Change to whatever you want for the in-page pen password
 const PASSWORD = "stag";
@@ -84,7 +84,7 @@ function updateAuthUI(user) {
 }
 
 async function getCurrentUser() {
-  const { data, error } = await supabase.auth.getUser();
+  const { data, error } = await sb.auth.getUser();
   if (error) {
     console.error("Error getting user:", error);
     return null;
@@ -103,7 +103,7 @@ async function loadMemoireFromSupabase() {
     return;
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await sb
     .from("memoire_entries")
     .select("*")
     .eq("user_id", user.id)
@@ -112,7 +112,7 @@ async function loadMemoireFromSupabase() {
   if (error) {
     // If no row yet, create one with default text
     if (error.code === "PGRST116" || error.message?.includes("No rows")) {
-      const { data: newRow, error: insertError } = await supabase
+      const { data: newRow, error: insertError } = await sb
         .from("memoire_entries")
         .insert({
           user_id: user.id,
@@ -146,7 +146,7 @@ async function saveMemoireToSupabase() {
     return;
   }
 
-  const { error } = await supabase
+  const { error } = await sb
     .from("memoire_entries")
     .update({
       content: editArea.innerHTML,
@@ -171,7 +171,7 @@ if (authLogin) {
       return;
     }
 
-    const { data, error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await sb.auth.signInWithPassword({
       email: authEmail.value,
       password: authPassword.value
     });
@@ -183,14 +183,13 @@ if (authLogin) {
     }
 
     updateAuthUI(data.user);
-    // Optional: load memoire immediately on login
     await loadMemoireFromSupabase();
   });
 }
 
 if (authLogout) {
   authLogout.addEventListener("click", async () => {
-    await supabase.auth.signOut();
+    await sb.auth.signOut();
     updateAuthUI(null);
     if (editArea) {
       editArea.innerHTML = "Start writing…";
@@ -240,7 +239,6 @@ async function submitPassword() {
   if (value === PASSWORD) {
     passwordError && passwordError.classList.add("hidden");
 
-    // Ensure logged in before editing
     const user = await getCurrentUser();
     if (!user) {
       alert("Log in first using the bar at the top.");
@@ -283,7 +281,7 @@ if (btnEditSave) {
   btnEditSave.addEventListener("click", () => {
     saveMemoireToSupabase();
   });
-}
+});
 
 // ===== ESC Key =====
 
