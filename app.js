@@ -2,14 +2,28 @@ console.log("Memoire app.js loaded");
 
 // ===== Supabase init (CDN global) =====
 const SUPABASE_URL = "https://eepfsaulkakeqfucewau.supabase.co";
-const SUPABASE_ANON_KEY = "https://eepfsaulkakeqfucewau.supabase.co/";
+
+// IMPORTANT:
+// This must be your *publishable / anon key*, NOT the URL.
+// Go to: Project Settings → API → "Project API keys" → "anon / publishable".
+// It will look like: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...."
+const SUPABASE_ANON_KEY = "PASTE_YOUR_PUBLISHABLE_KEY_HERE";
 
 let sb = null;
 
 if (typeof supabase === "undefined") {
   console.warn("Supabase global is not available. Backend features disabled.");
+} else if (
+  !SUPABASE_ANON_KEY ||
+  SUPABASE_ANON_KEY.startsWith("http://") ||
+  SUPABASE_ANON_KEY.startsWith("https://")
+) {
+  console.warn(
+    "Supabase anon key is not set correctly (looks like a URL or empty). Backend disabled."
+  );
 } else {
   sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  console.log("Supabase client initialized.");
 }
 
 // In-page password for pen
@@ -64,12 +78,14 @@ function hideAllModals() {
 }
 
 function openModal(modal) {
+  if (!overlay || !modal) return;
   overlay.classList.remove("hidden");
   hideAllModals();
   modal.classList.remove("hidden");
 }
 
 function closeOverlay() {
+  if (!overlay) return;
   overlay.classList.add("hidden");
   hideAllModals();
 }
@@ -184,7 +200,7 @@ if (authLogin) {
     console.log("Login button clicked");
 
     if (!sb) {
-      alert("Backend is not connected; login disabled.");
+      alert("Backend is not connected or anon key is incorrect; login disabled.");
       return;
     }
 
@@ -200,7 +216,7 @@ if (authLogin) {
 
     if (error) {
       console.error("Login error:", error);
-      alert("Login failed. Check email/password.");
+      alert("Login failed. Check email/password or Supabase config.");
       return;
     }
 
@@ -222,7 +238,7 @@ if (authLogout) {
 // Check auth state on load (only if backend available)
 (async () => {
   if (!sb) {
-    console.warn("Backend not available; running in local-only mode.");
+    console.warn("Backend not available or anon key invalid; running in local-only mode.");
     return;
   }
   const user = await getCurrentUser();
