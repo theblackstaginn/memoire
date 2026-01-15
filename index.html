@@ -8,6 +8,17 @@
 </head>
 <body>
 
+  <!-- AUTH BAR -->
+  <header id="auth-bar">
+    <div class="auth-inner">
+      <span id="auth-status">Not signed in</span>
+      <input id="auth-email" type="email" placeholder="Email" autocomplete="email" />
+      <input id="auth-password" type="password" placeholder="Password" autocomplete="current-password" />
+      <button id="auth-login" class="btn btn-primary btn-auth">Log in</button>
+      <button id="auth-logout" class="btn btn-secondary btn-auth hidden">Log out</button>
+    </div>
+  </header>
+
   <!-- DESK SCENE -->
   <div id="scene">
     <img id="desk-bg" src="./memoire-assets/desk.png" alt="Desk background" />
@@ -111,6 +122,7 @@
 
   </div>
 
-  <script src="app.js"></script>
+  <!-- NOTE: type="module" so we can import Supabase -->
+  <script type="module" src="app.js"></script>
 </body>
 </html>
