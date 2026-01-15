@@ -2,18 +2,17 @@ console.log("Memoire app.js loaded");
 
 // ===== Supabase init (CDN global) =====
 const SUPABASE_URL = "https://eepfsaulkakeqfucewau.supabase.co";
-const SUPABASE_ANON_KEY = https://eepfsaulkakeqfucewau.supabase.co/;
+const SUPABASE_ANON_KEY = "PASTE_YOUR_PUBLISHABLE_KEY_HERE";
+
+let sb = null;
 
 if (typeof supabase === "undefined") {
-  console.error("Supabase global is not available. Check script tag order.");
-  alert("Supabase library failed to load. Check console.");
+  console.warn("Supabase global is not available. Backend features disabled.");
+} else {
+  sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 }
 
-// If supabase is missing, this will throw, but we already logged above
-const { createClient } = supabase;
-const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-// Change to whatever you want for the in-page pen password
+// In-page password for pen
 const PASSWORD = "stag";
 
 // ===== DOM hooks =====
@@ -91,6 +90,7 @@ function updateAuthUI(user) {
 }
 
 async function getCurrentUser() {
+  if (!sb) return null;
   const { data, error } = await sb.auth.getUser();
   if (error) {
     console.error("Error getting user:", error);
@@ -102,6 +102,10 @@ async function getCurrentUser() {
 // ===== Supabase: load / save memoire =====
 
 async function loadMemoireFromSupabase() {
+  if (!sb) {
+    console.warn("Supabase not configured; skipping load.");
+    return;
+  }
   if (!editArea) return;
 
   const user = await getCurrentUser();
@@ -145,6 +149,10 @@ async function loadMemoireFromSupabase() {
 }
 
 async function saveMemoireToSupabase() {
+  if (!sb) {
+    alert("Backend is not connected; cannot save to cloud.");
+    return;
+  }
   if (!editArea) return;
 
   const user = await getCurrentUser();
@@ -174,6 +182,12 @@ async function saveMemoireToSupabase() {
 if (authLogin) {
   authLogin.addEventListener("click", async () => {
     console.log("Login button clicked");
+
+    if (!sb) {
+      alert("Backend is not connected; login disabled.");
+      return;
+    }
+
     if (!authEmail.value || !authPassword.value) {
       alert("Enter email and password.");
       return;
@@ -197,7 +211,7 @@ if (authLogin) {
 
 if (authLogout) {
   authLogout.addEventListener("click", async () => {
-    await sb.auth.signOut();
+    if (sb) await sb.auth.signOut();
     updateAuthUI(null);
     if (editArea) {
       editArea.innerHTML = "Start writing…";
@@ -205,8 +219,12 @@ if (authLogout) {
   });
 }
 
-// Check auth state on load
+// Check auth state on load (only if backend available)
 (async () => {
+  if (!sb) {
+    console.warn("Backend not available; running in local-only mode.");
+    return;
+  }
   const user = await getCurrentUser();
   updateAuthUI(user);
   console.log("Memoire initialized, user:", user);
@@ -253,11 +271,14 @@ async function submitPassword() {
     passwordError && passwordError.classList.add("hidden");
 
     const user = await getCurrentUser();
-    if (!user) {
+    if (!sb) {
+      alert("Backend not connected; edit mode is local-only.");
+    } else if (!user) {
       alert("Log in first using the bar at the top.");
       return;
     }
 
+    // Load from backend (if available), then open editor
     await loadMemoireFromSupabase();
     openModal(editModal);
   } else {
