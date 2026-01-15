@@ -1,7 +1,7 @@
 // Memoire – interaction logic
 
 // Change to whatever you want
-const PASSWORD = "stag";
+const PASSWORD = "19659984";
 
 // Overlay + modals
 const overlay       = document.getElementById("modal-overlay");
