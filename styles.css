@@ -63,9 +63,9 @@ body {
 
 /* Tune these once loaded */
 #book-hitbox {
-  left: 50%;
+  left: 48%;
   top: 55%;
-  width: 20%;
+  width: 27%;
 }
 
 #pen-hitbox {
