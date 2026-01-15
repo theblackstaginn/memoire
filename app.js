@@ -2,7 +2,7 @@ console.log("Memoire app.js loaded");
 
 // ===== Supabase init (CDN global) =====
 const SUPABASE_URL = "https://eepfsaulkakeqfucewau.supabase.co";
-const SUPABASE_ANON_KEY = "PASTE_YOUR_PUBLISHABLE_KEY_HERE";
+const SUPABASE_ANON_KEY = "https://eepfsaulkakeqfucewau.supabase.co/";
 
 let sb = null;
 
