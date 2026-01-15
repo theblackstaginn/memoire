@@ -3,23 +3,15 @@ console.log("Memoire app.js loaded");
 // ===== Supabase init (CDN global) =====
 const SUPABASE_URL = "https://eepfsaulkakeqfucewau.supabase.co";
 
-// IMPORTANT:
-// This must be your *publishable / anon key*, NOT the URL.
-// Go to: Project Settings → API → "Project API keys" → anon/public key.
-const SUPABASE_ANON_KEY = "sb_publishable_kXKPON3Ass12XEj7KAdlzw_7JkNjUpL"; // <— paste your eyJ... key here
+// This is your real publishable/anon key
+const SUPABASE_ANON_KEY = "sb_publishable_kXKPON3Ass12XEj7KAdlzw_7JkNjUpL";
 
 let sb = null;
 
 if (typeof supabase === "undefined") {
   console.warn("Supabase global is not available. Backend features disabled.");
-} else if (
-  !SUPABASE_ANON_KEY ||
-  SUPABASE_ANON_KEY.startsWith("http://") ||
-  SUPABASE_ANON_KEY.startsWith("https://")
-) {
-  console.warn(
-    "Supabase anon key is not set correctly (looks like a URL or empty). Backend disabled."
-  );
+} else if (!SUPABASE_ANON_KEY) {
+  console.warn("Supabase anon key missing. Backend disabled.");
 } else {
   sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   console.log("Supabase client initialized.");
@@ -117,17 +109,11 @@ async function getCurrentUser() {
 // ===== Supabase: load / save memoire =====
 
 async function loadMemoireFromSupabase() {
-  if (!sb) {
-    console.warn("Supabase not configured; skipping load.");
-    return;
-  }
+  if (!sb) return;
   if (!editArea) return;
 
   const user = await getCurrentUser();
-  if (!user) {
-    console.warn("No user logged in; cannot load memoire.");
-    return;
-  }
+  if (!user) return;
 
   const { data, error } = await sb
     .from("memoire_entries")
@@ -136,9 +122,8 @@ async function loadMemoireFromSupabase() {
     .single();
 
   if (error) {
-    // If no row yet, create one with default text
     if (error.code === "PGRST116" || error.message?.includes("No rows")) {
-      const { data: newRow, error: insertError } = await sb
+      const { data: newRow } = await sb
         .from("memoire_entries")
         .insert({
           user_id: user.id,
@@ -147,16 +132,10 @@ async function loadMemoireFromSupabase() {
         .select()
         .single();
 
-      if (insertError) {
-        console.error("Error creating memoire row:", insertError);
-        return;
-      }
-
-      editArea.innerHTML = newRow.content || "Start writing…";
+      editArea.innerHTML = newRow?.content || "Start writing…";
       return;
     }
-
-    console.error("Error loading memoire:", error);
+    console.error("Load error:", error);
     return;
   }
 
@@ -164,15 +143,12 @@ async function loadMemoireFromSupabase() {
 }
 
 async function saveMemoireToSupabase() {
-  if (!sb) {
-    alert("Backend is not connected; cannot save to cloud.");
-    return;
-  }
+  if (!sb) return alert("Backend not connected.");
   if (!editArea) return;
-
+  
   const user = await getCurrentUser();
   if (!user) {
-    alert("You must be logged in to save.");
+    alert("Log in first.");
     return;
   }
 
@@ -186,9 +162,9 @@ async function saveMemoireToSupabase() {
 
   if (error) {
     console.error("Save failed:", error);
-    alert("Save failed. Check console for details.");
+    alert("Save failed.");
   } else {
-    console.log("Memoire saved to Supabase.");
+    console.log("Saved to Supabase.");
   }
 }
 
@@ -196,15 +172,9 @@ async function saveMemoireToSupabase() {
 
 if (authLogin) {
   authLogin.addEventListener("click", async () => {
-    console.log("Login button clicked");
-
-    if (!sb) {
-      alert("Backend is not connected or anon key is incorrect; login disabled.");
-      return;
-    }
-
+    if (!sb) return alert("Backend not connected.");
     if (!authEmail.value || !authPassword.value) {
-      alert("Enter email and password.");
+      alert("Enter email + password.");
       return;
     }
 
@@ -215,7 +185,7 @@ if (authLogin) {
 
     if (error) {
       console.error("Login error:", error);
-      alert("Login failed. Check email/password or Supabase config.");
+      alert("Login failed.");
       return;
     }
 
@@ -228,49 +198,34 @@ if (authLogout) {
   authLogout.addEventListener("click", async () => {
     if (sb) await sb.auth.signOut();
     updateAuthUI(null);
-    if (editArea) {
-      editArea.innerHTML = "Start writing…";
-    }
+    if (editArea) editArea.innerHTML = "Start writing…";
   });
 }
 
-// Check auth state on load (only if backend available)
+// ===== Init auth state =====
+
 (async () => {
-  if (!sb) {
-    console.warn("Backend not available or anon key invalid; running in local-only mode.");
-    return;
-  }
+  if (!sb) return;
   const user = await getCurrentUser();
   updateAuthUI(user);
-  console.log("Memoire initialized, user:", user);
 })();
 
-// ===== Book Flow: warning -> read =====
+// ===== Book Flow =====
 
 if (bookHitbox) {
-  bookHitbox.addEventListener("click", () => {
-    console.log("Book clicked");
-    openModal(warningModal);
-  });
+  bookHitbox.addEventListener("click", () => openModal(warningModal));
 }
 
-if (btnWarningLeave) {
-  btnWarningLeave.addEventListener("click", closeOverlay);
-}
+if (btnWarningLeave) btnWarningLeave.addEventListener("click", closeOverlay);
 
-if (btnWarningOk) {
-  btnWarningOk.addEventListener("click", () => openModal(readerModal));
-}
+if (btnWarningOk) btnWarningOk.addEventListener("click", () => openModal(readerModal));
 
-if (btnReaderClose) {
-  btnReaderClose.addEventListener("click", closeOverlay);
-}
+if (btnReaderClose) btnReaderClose.addEventListener("click", closeOverlay);
 
-// ===== Pen Flow: password -> edit (with Supabase load) =====
+// ===== Pen Flow =====
 
 if (penHitbox) {
   penHitbox.addEventListener("click", () => {
-    console.log("Pen clicked");
     if (passwordInput) passwordInput.value = "";
     if (passwordError) passwordError.classList.add("hidden");
     openModal(passwordModal);
@@ -279,33 +234,21 @@ if (penHitbox) {
 }
 
 async function submitPassword() {
-  if (!passwordInput) return;
   const value = passwordInput.value.trim();
-
-  if (value === PASSWORD) {
-    passwordError && passwordError.classList.add("hidden");
-
-    const user = await getCurrentUser();
-    if (!sb) {
-      alert("Backend not connected; edit mode is local-only.");
-    } else if (!user) {
-      alert("Log in first using the bar at the top.");
-      return;
-    }
-
-    // Load from backend (if available), then open editor
-    await loadMemoireFromSupabase();
-    openModal(editModal);
-  } else {
-    passwordError && passwordError.classList.remove("hidden");
+  if (value !== PASSWORD) {
+    passwordError.classList.remove("hidden");
+    return;
   }
+
+  const user = await getCurrentUser();
+  if (!user) return alert("Log in first.");
+
+  await loadMemoireFromSupabase();
+  openModal(editModal);
 }
 
-if (btnPwdSubmit) {
-  btnPwdSubmit.addEventListener("click", () => {
-    submitPassword();
-  });
-}
+if (btnPwdSubmit) btnPwdSubmit.addEventListener("click", submitPassword);
+if (btnPwdCancel) btnPwdCancel.addEventListener("click", closeOverlay);
 
 if (passwordInput) {
   passwordInput.addEventListener("keydown", (e) => {
@@ -316,23 +259,12 @@ if (passwordInput) {
   });
 }
 
-if (btnPwdCancel) {
-  btnPwdCancel.addEventListener("click", closeOverlay);
-}
+// ===== Edit Save & Close =====
 
-// ===== Edit Close & Save =====
+if (btnEditClose) btnEditClose.addEventListener("click", closeOverlay);
+if (btnEditSave) btnEditSave.addEventListener("click", saveMemoireToSupabase);
 
-if (btnEditClose) {
-  btnEditClose.addEventListener("click", closeOverlay);
-}
-
-if (btnEditSave) {
-  btnEditSave.addEventListener("click", () => {
-    saveMemoireToSupabase();
-  });
-});
-
-// ===== ESC Key =====
+// ===== ESC =====
 
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape" && !overlay.classList.contains("hidden")) {
