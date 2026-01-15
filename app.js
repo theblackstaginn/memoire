@@ -5,9 +5,8 @@ const SUPABASE_URL = "https://eepfsaulkakeqfucewau.supabase.co";
 
 // IMPORTANT:
 // This must be your *publishable / anon key*, NOT the URL.
-// Go to: Project Settings → API → "Project API keys" → "anon / publishable".
-// It will look like: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...."
-const SUPABASE_ANON_KEY = "sb_publishable_kXKPON3Ass12XEj7KAdlzw_7JkNjUpL";
+// Go to: Project Settings → API → "Project API keys" → anon/public key.
+const SUPABASE_ANON_KEY = "YOUR_ANON_KEY_HERE"; // <— paste your eyJ... key here
 
 let sb = null;
 
