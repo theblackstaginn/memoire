@@ -1,294 +1,328 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-// ===== Supabase init =====
-const SUPABASE_URL = "https://eepfsaulkakeqfucewau.supabase.co";
-const SUPABASE_ANON_KEY = "PASTE_YOUR_ANON_KEY_HERE";
-
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-// Change to whatever you want for the in-page pen password
-const PASSWORD = "stag";
-
-// ===== DOM hooks =====
-
-// Overlay + modals
-const overlay       = document.getElementById("modal-overlay");
-const warningModal  = document.getElementById("warning-modal");
-const passwordModal = document.getElementById("password-modal");
-const readerModal   = document.getElementById("reader-modal");
-const editModal     = document.getElementById("edit-modal");
-
-const modals = [warningModal, passwordModal, readerModal, editModal];
-
-// Desk buttons
-const bookHitbox = document.getElementById("book-hitbox");
-const penHitbox  = document.getElementById("pen-hitbox");
-
-// Warning buttons
-const btnWarningLeave = document.getElementById("btn-warning-leave");
-const btnWarningOk    = document.getElementById("btn-warning-ok");
-
-// Password controls
-const passwordInput = document.getElementById("password-input");
-const passwordError = document.getElementById("password-error");
-const btnPwdCancel  = document.getElementById("btn-password-cancel");
-const btnPwdSubmit  = document.getElementById("btn-password-submit");
-
-// Reader close
-const btnReaderClose = document.getElementById("btn-reader-close");
-
-// Edit controls
-const btnEditClose = document.getElementById("btn-edit-close");
-const btnEditSave  = document.getElementById("btn-edit-save");
-
-// Edit area
-const editArea = document.getElementById("edit-area");
-
-// Auth bar
-const authStatus   = document.getElementById("auth-status");
-const authEmail    = document.getElementById("auth-email");
-const authPassword = document.getElementById("auth-password");
-const authLogin    = document.getElementById("auth-login");
-const authLogout   = document.getElementById("auth-logout");
-
-// ===== Helpers: modal handling =====
-
-function hideAllModals() {
-  modals.forEach((m) => m && m.classList.add("hidden"));
+:root {
+  --bg-dark: #050608;
+  --overlay: rgba(5, 6, 8, 0.82);
+  --card-bg: rgba(13, 12, 10, 0.96);
+  --text: #f4f1ea;
+  --muted: rgba(244, 241, 234, 0.78);
+  --accent: #d9b26b;
+  --danger: #ff6b6b;
+  --radius: 16px;
 }
 
-function openModal(modal) {
-  overlay.classList.remove("hidden");
-  hideAllModals();
-  modal.classList.remove("hidden");
+/* Reset */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
-function closeOverlay() {
-  overlay.classList.add("hidden");
-  hideAllModals();
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
 }
 
-// ===== Helpers: auth =====
-
-function updateAuthUI(user) {
-  const isLoggedIn = !!user;
-  if (authStatus) {
-    authStatus.textContent = isLoggedIn
-      ? `Signed in as ${user.email}`
-      : "Not signed in";
-  }
-  if (authLogin && authLogout) {
-    authLogin.classList.toggle("hidden", isLoggedIn);
-    authLogout.classList.toggle("hidden", !isLoggedIn);
-  }
+body {
+  background: var(--bg-dark);
+  color: var(--text);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
-async function getCurrentUser() {
-  const { data, error } = await supabase.auth.getUser();
-  if (error) {
-    console.error("Error getting user:", error);
-    return null;
-  }
-  return data.user || null;
+/* ========== AUTH BAR ========== */
+
+#auth-bar {
+  position: relative;
+  z-index: 30;
+  padding: 6px 10px;
+  background: rgba(5, 6, 8, 0.9);
+  border-bottom: 1px solid rgba(244, 241, 234, 0.08);
 }
 
-// ===== Supabase: load / save memoire =====
-
-async function loadMemoireFromSupabase() {
-  if (!editArea) return;
-
-  const user = await getCurrentUser();
-  if (!user) {
-    console.warn("No user logged in; cannot load memoire.");
-    return;
-  }
-
-  const { data, error } = await supabase
-    .from("memoire_entries")
-    .select("*")
-    .eq("user_id", user.id)
-    .single();
-
-  if (error) {
-    // If no row yet, create one with default text
-    if (error.code === "PGRST116" || error.message?.includes("No rows")) {
-      const { data: newRow, error: insertError } = await supabase
-        .from("memoire_entries")
-        .insert({
-          user_id: user.id,
-          content: "Start writing…"
-        })
-        .select()
-        .single();
-
-      if (insertError) {
-        console.error("Error creating memoire row:", insertError);
-        return;
-      }
-
-      editArea.innerHTML = newRow.content || "Start writing…";
-      return;
-    }
-
-    console.error("Error loading memoire:", error);
-    return;
-  }
-
-  editArea.innerHTML = data.content || "Start writing…";
+.auth-inner {
+  max-width: 900px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-async function saveMemoireToSupabase() {
-  if (!editArea) return;
+#auth-status {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-right: 8px;
+}
 
-  const user = await getCurrentUser();
-  if (!user) {
-    alert("You must be logged in to save.");
-    return;
-  }
+#auth-email,
+#auth-password {
+  max-width: 180px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(244, 241, 234, 0.35);
+  background: rgba(0,0,0,0.4);
+  color: var(--text);
+  font-size: 0.8rem;
+}
 
-  const { error } = await supabase
-    .from("memoire_entries")
-    .update({
-      content: editArea.innerHTML,
-      updated_at: new Date().toISOString()
-    })
-    .eq("user_id", user.id);
+.btn-auth {
+  font-size: 0.8rem;
+  padding: 4px 10px;
+}
 
-  if (error) {
-    console.error("Save failed:", error);
-    alert("Save failed. Check console for details.");
-  } else {
-    console.log("Memoire saved to Supabase.");
+/* ========== DESK SCENE ========== */
+
+#scene {
+  position: relative;
+  width: 100vw;
+  height: calc(100vh - 40px); /* leave room for auth bar */
+  overflow: hidden;
+}
+
+#desk-bg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Hitboxes */
+
+.hitbox {
+  position: absolute;
+  border: none;
+  padding: 0;
+  background: none;
+  cursor: pointer;
+  transform: translate(-50%, -50%);
+}
+
+.hitbox img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+/* Tune these once loaded */
+#book-hitbox {
+  left: 50%;
+  top: 55%;
+  width: 27%;
+}
+
+#pen-hitbox {
+  left: 76%;
+  top: 50%;
+  width: 17%;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .hitbox:hover {
+    transform: translate(-50%, -50%) scale(1.04);
   }
 }
 
-// ===== Auth events =====
+/* ========== MODALS ========== */
 
-if (authLogin) {
-  authLogin.addEventListener("click", async () => {
-    if (!authEmail.value || !authPassword.value) {
-      alert("Enter email and password.");
-      return;
-    }
-
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: authEmail.value,
-      password: authPassword.value
-    });
-
-    if (error) {
-      console.error("Login error:", error);
-      alert("Login failed. Check email/password.");
-      return;
-    }
-
-    updateAuthUI(data.user);
-    // Optional: load memoire immediately on login
-    await loadMemoireFromSupabase();
-  });
+.hidden {
+  display: none !important;
 }
 
-if (authLogout) {
-  authLogout.addEventListener("click", async () => {
-    await supabase.auth.signOut();
-    updateAuthUI(null);
-    if (editArea) {
-      editArea.innerHTML = "Start writing…";
-    }
-  });
+#modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--overlay);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
 }
 
-// Check auth state on load
-(async () => {
-  const user = await getCurrentUser();
-  updateAuthUI(user);
-})();
-
-// ===== Book Flow: warning -> read =====
-
-if (bookHitbox) {
-  bookHitbox.addEventListener("click", () => openModal(warningModal));
+.modal {
+  color: var(--text);
 }
 
-if (btnWarningLeave) {
-  btnWarningLeave.addEventListener("click", closeOverlay);
+/* Cards */
+
+.card {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  padding: 24px 22px;
+  max-width: 420px;
+  width: min(90vw, 420px);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.8);
 }
 
-if (btnWarningOk) {
-  btnWarningOk.addEventListener("click", () => openModal(readerModal));
+.card h2 {
+  margin: 0 0 8px;
+  font-size: 1.3rem;
 }
 
-if (btnReaderClose) {
-  btnReaderClose.addEventListener("click", closeOverlay);
+.card p {
+  margin: 0 0 16px;
+  color: var(--muted);
 }
 
-// ===== Pen Flow: password -> edit (with Supabase load) =====
+/* Sheets */
 
-if (penHitbox) {
-  penHitbox.addEventListener("click", () => {
-    if (passwordInput) passwordInput.value = "";
-    if (passwordError) passwordError.classList.add("hidden");
-    openModal(passwordModal);
-    setTimeout(() => passwordInput && passwordInput.focus(), 50);
-  });
+.sheet {
+  background: var(--card-bg);
+  border-radius: 0;
+  width: min(980px, 100vw);
+  height: min(620px, 90vh);
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.85);
 }
 
-async function submitPassword() {
-  if (!passwordInput) return;
-  const value = passwordInput.value.trim();
+.sheet-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  border-bottom: 1px solid rgba(244, 241, 234, 0.12);
+}
 
-  if (value === PASSWORD) {
-    passwordError && passwordError.classList.add("hidden");
+.sheet-header h2 {
+  margin: 0;
+  font-size: 1.1rem;
+  letter-spacing: 0.05em;
+}
 
-    // Ensure logged in before editing
-    const user = await getCurrentUser();
-    if (!user) {
-      alert("Log in first using the bar at the top.");
-      return;
-    }
+/* X Button Fix */
 
-    await loadMemoireFromSupabase();
-    openModal(editModal);
-  } else {
-    passwordError && passwordError.classList.remove("hidden");
+.icon-btn {
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.icon-btn img {
+  width: 20px;
+  aspect-ratio: 1 / 1;
+  height: auto;
+  display: block;
+  object-fit: contain;
+  filter: drop-shadow(0 0 4px rgba(0,0,0,0.6));
+}
+
+/* Save button tweak */
+
+.btn-save {
+  font-size: 0.8rem;
+  padding: 5px 12px;
+}
+
+/* Body */
+
+.sheet-body {
+  flex: 1;
+  padding: 16px;
+  overflow: auto;
+}
+
+/* Reader */
+
+.reader-body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.open-book-img {
+  max-width: 100%;
+  max-height: 100%;
+  display: block;
+}
+
+/* Editor */
+
+.edit-wrapper {
+  position: relative;
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.edit-parchment {
+  width: 100%;
+  display: block;
+}
+
+.edit-area {
+  position: absolute;
+  inset: 10% 8%;
+  padding: 12px 16px;
+  background: transparent;
+  overflow: auto;
+  color: #312616;
+  font-family: "Cormorant Garamond", Georgia, serif;
+  line-height: 1.6;
+  outline: none;
+}
+
+/* Actions */
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.btn {
+  border-radius: 999px;
+  border: 1px solid transparent;
+  padding: 7px 14px;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.btn-primary {
+  background: var(--accent);
+  border-color: #c9a45a;
+  color: #20160a;
+}
+
+.btn-secondary {
+  background: transparent;
+  border-color: rgba(244,241,234,0.4);
+  color: var(--text);
+}
+
+/* Inputs */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+.field input {
+  border-radius: 999px;
+  border: 1px solid rgba(244,241,234,0.4);
+  padding: 6px 10px;
+  background: rgba(0,0,0,0.35);
+  color: var(--text);
+}
+
+.error {
+  margin-top: 4px;
+  font-size: 0.8rem;
+  color: var(--danger);
+}
+
+/* Mobile */
+
+@media (max-width: 700px) {
+  .sheet {
+    width: 100vw;
+    height: 100vh;
+  }
+  .edit-area {
+    inset: 8% 5%;
+  }
+
+  .auth-inner {
+    flex-wrap: wrap;
   }
 }
-
-if (btnPwdSubmit) {
-  btnPwdSubmit.addEventListener("click", () => {
-    submitPassword();
-  });
-}
-
-if (passwordInput) {
-  passwordInput.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      submitPassword();
-    }
-  });
-}
-
-if (btnPwdCancel) {
-  btnPwdCancel.addEventListener("click", closeOverlay);
-}
-
-// ===== Edit Close & Save =====
-
-if (btnEditClose) {
-  btnEditClose.addEventListener("click", closeOverlay);
-}
-
-if (btnEditSave) {
-  btnEditSave.addEventListener("click", () => {
-    saveMemoireToSupabase();
-  });
-}
-
-// ===== ESC Key =====
-
-document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape" && !overlay.classList.contains("hidden")) {
-    closeOverlay();
-  }
-});
