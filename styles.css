@@ -165,6 +165,15 @@ body {
   filter: drop-shadow(0 0 4px rgba(0,0,0,0.6));
 }
 
+/* Save button tweak */
+
+.btn-save {
+  font-size: 0.8rem;
+  padding: 5px 12px;
+}
+
+/* Body */
+
 .sheet-body {
   flex: 1;
   padding: 16px;
