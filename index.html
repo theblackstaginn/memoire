@@ -82,7 +82,7 @@
       </div>
     </div>
 
-    <!-- 3. READER MODAL -->
+    <!-- 3. READER MODAL (OPEN BOOK WITH PAGES) -->
     <div id="reader-modal" class="modal sheet hidden">
       <div class="sheet-header">
         <button id="btn-reader-close" type="button" class="icon-btn">
@@ -91,11 +91,36 @@
         <h2>Memoirs – Read</h2>
       </div>
       <div class="sheet-body reader-body">
-        <img
-          src="./memoire-assets/open-book.png"
-          alt="Open memoir"
-          class="open-book-img"
-        />
+        <div class="open-book-wrapper">
+          <img
+            src="./memoire-assets/open-book.png"
+            alt="Open memoir"
+            class="open-book-img"
+          />
+
+          <!-- Left / right page text -->
+          <div id="page-left" class="page page-left"></div>
+          <div id="page-right" class="page page-right"></div>
+
+          <!-- Page nav buttons -->
+          <button
+            id="btn-page-prev"
+            type="button"
+            class="page-nav page-nav-left"
+            aria-label="Previous pages"
+          >
+            <img src="./memoire-assets/back-button.png" alt="" />
+          </button>
+
+          <button
+            id="btn-page-next"
+            type="button"
+            class="page-nav page-nav-right"
+            aria-label="Next pages"
+          >
+            <img src="./memoire-assets/forward-button.png" alt="" />
+          </button>
+        </div>
       </div>
     </div>
 
