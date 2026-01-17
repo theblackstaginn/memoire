@@ -243,19 +243,19 @@ body {
   display: block;
 }
 
-/* The text areas sitting on top of each page */
+/* Text areas on pages */
 .page {
   position: absolute;
   top: 18%;
   bottom: 14%;
-  width: 36%;
+  width: 34%; /* was 36%, tightened to avoid overlap */
   padding: 0 18px;
   overflow: hidden;
   color: #2b2217;
   font-family: "Cormorant Garamond", Georgia, serif;
   font-size: 1rem;
   line-height: 1.5;
-  white-space: pre-wrap; /* respect line breaks */
+  white-space: pre-wrap;
 }
 
 .page-left {
@@ -263,7 +263,7 @@ body {
 }
 
 .page-right {
-  right: 13%;
+  right: 9%; /* was 13%, moved inward toward gutter */
 }
 
 /* Page nav buttons */
@@ -394,7 +394,7 @@ body {
   .page {
     top: 16%;
     bottom: 12%;
-    width: 40%;
+    width: 38%; /* adjusted for mobile */
     padding: 0 10px;
   }
 
@@ -403,7 +403,7 @@ body {
   }
 
   .page-right {
-    right: 10%;
+    right: 8%; /* nudged inward */
   }
 
   .page-nav img {
