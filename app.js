@@ -63,8 +63,8 @@ const authLogin    = document.getElementById("auth-login");
 const authLogout   = document.getElementById("auth-logout");
 
 // ===== Reader state =====
-let memoPages = [];
-let currentPageIndex = 0;
+let memoPages = [];        // array of plain-text page strings
+let currentPageIndex = 0;  // index of LEFT page (0, 2, 4, ...)
 
 // ===== Modal helpers =====
 function hideAllModals() {
@@ -116,9 +116,9 @@ function updateAuthUI(user) {
   }
 }
 
-// ===== Pagination =====
+// ===== Text helpers =====
 
-// HTML -> plain text in DOM order
+// Convert editArea HTML into plain text, in DOM order
 function htmlToPlainText(html) {
   const tmp = document.createElement("div");
   tmp.innerHTML = html || "";
@@ -126,27 +126,22 @@ function htmlToPlainText(html) {
   return txt;
 }
 
-// Simple char-based paginator: never drops chars, just slices text
-function paginateByChars(text, maxChars) {
+/**
+ * Strict sequential paginator:
+ * - NO reordering
+ * - NO fancy word-boundary logic
+ * - Just slices the text in order into equal-sized chunks.
+ * This guarantees that if the text exists in edit mode, it exists
+ * somewhere in memoPages with nothing missing.
+ */
+function paginateStrictByChars(text, maxCharsPerPage) {
   if (!text) return [""];
 
   const pages = [];
   const len = text.length;
-  let idx = 0;
 
-  while (idx < len) {
-    let end = idx + maxChars;
-    if (end >= len) {
-      pages.push(text.slice(idx));
-      break;
-    }
-
-    // Prefer to cut at a space before the maxChars mark
-    let cut = text.lastIndexOf(" ", end);
-    if (cut <= idx) cut = end; // no good space, hard cut
-
-    pages.push(text.slice(idx, cut));
-    idx = cut;
+  for (let i = 0; i < len; i += maxCharsPerPage) {
+    pages.push(text.slice(i, i + maxCharsPerPage));
   }
 
   return pages.length ? pages : [""];
@@ -164,16 +159,19 @@ function buildPagesFromEditArea() {
   const html = editArea.innerHTML;
   const plain = htmlToPlainText(html);
 
+  // Rough capacity: more chars on desktop than mobile
   const vw = window.innerWidth || 1024;
-  // This is how much fits on ONE physical page.
-  // Tweak if you want more/less text per page.
-  const maxCharsPerPage = vw < 700 ? 600 : 900;
+  const maxCharsPerPage = vw < 700 ? 700 : 1200;
 
-  memoPages = paginateByChars(plain, maxCharsPerPage);
+  console.log("Plain text length:", plain.length, "chars");
+  console.log("Page size:", maxCharsPerPage, "chars");
+
+  memoPages = paginateStrictByChars(plain, maxCharsPerPage);
   currentPageIndex = 0;
   updateReaderSpread();
 }
 
+// Push current pages into the left/right page elements
 function updateReaderSpread() {
   if (!pageLeft || !pageRight) return;
 
@@ -185,11 +183,12 @@ function updateReaderSpread() {
     return;
   }
 
+  // Force left page index to be even
   if (currentPageIndex < 0) currentPageIndex = 0;
   if (currentPageIndex >= memoPages.length) {
     currentPageIndex = Math.max(0, memoPages.length - 1);
   }
-  if (currentPageIndex % 2 !== 0) currentPageIndex--; // left page must be even index
+  if (currentPageIndex % 2 !== 0) currentPageIndex--;
 
   const leftIdx = currentPageIndex;
   const rightIdx = currentPageIndex + 1;
@@ -206,6 +205,8 @@ function updateReaderSpread() {
   if (btnPageNext) {
     btnPageNext.classList.toggle("disabled", !hasNextSpread);
   }
+
+  console.log("Spread:", leftIdx, " & ", rightIdx, " / total pages:", memoPages.length);
 }
 
 // ===== Supabase load/save =====
@@ -236,7 +237,7 @@ async function loadMemoireFromSupabase() {
     editArea.innerHTML = "Start writing…";
   }
 
-  // Build pages from what we just loaded
+  // Optional: prebuild pages after load
   buildPagesFromEditArea();
 }
 
@@ -318,7 +319,6 @@ if (authLogout) {
 (async function initMemoire() {
   if (!sb) {
     console.warn("Supabase not configured; running in local-only mode.");
-    buildPagesFromEditArea();
     return;
   }
 
@@ -327,12 +327,9 @@ if (authLogout) {
 
   if (user) {
     await loadMemoireFromSupabase();
-  } else {
-    // No user yet; still build pages from whatever is in the editor
-    buildPagesFromEditArea();
   }
 })();
-
+ 
 // ===== Book flow =====
 if (bookHitbox) {
   bookHitbox.addEventListener("click", () => {
@@ -348,7 +345,8 @@ if (btnWarningLeave) {
 
 if (btnWarningOk) {
   btnWarningOk.addEventListener("click", () => {
-    // Always use current editor content for the reader
+    // Build pages from the CURRENT editor content, not from Supabase.
+    // If it's visible in edit mode, it will be in the book.
     buildPagesFromEditArea();
     openModal(readerModal);
   });
@@ -371,7 +369,6 @@ async function handlePasswordSubmit() {
   }
   passwordError.classList.add("hidden");
 
-  // Sync from Supabase once when entering edit
   if (sb) {
     const user = await getCurrentUser();
     if (!user) {
@@ -455,7 +452,9 @@ document.addEventListener("keydown", (e) => {
   }
 });
 
-// Optional: rebuild page splits on resize so it stays pretty
+// Rebuild page splits on resize so things roughly keep fitting
 window.addEventListener("resize", () => {
-  buildPagesFromEditArea();
+  if (readerModal && !readerModal.classList.contains("hidden")) {
+    buildPagesFromEditArea();
+  }
 });
