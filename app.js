@@ -136,12 +136,14 @@ function updateAuthUI(user) {
 
 // ===== Helpers: reader pagination =====
 
+// Convert the saved HTML to plain text in DOM order
 function htmlToPlainText(html) {
   const tmp = document.createElement("div");
   tmp.innerHTML = html || "";
   return tmp.innerText.replace(/\u00A0/g, " ");
 }
 
+// NEW: word-based paginator, strictly sequential
 function paginateText(text, maxCharsPerPage = 650) {
   const pages = [];
   if (!text) {
@@ -149,32 +151,33 @@ function paginateText(text, maxCharsPerPage = 650) {
     return pages;
   }
 
-  let remaining = text.replace(/\r\n/g, "\n").trim();
+  // Normalize whitespace and keep order
+  const normalized = text.replace(/\r\n/g, "\n").replace(/\s+/g, " ").trim();
+  const words = normalized.split(" ");
 
-  while (remaining.length > 0) {
-    if (remaining.length <= maxCharsPerPage) {
-      pages.push(remaining);
-      break;
+  let current = "";
+
+  for (const word of words) {
+    if (!word) continue;
+
+    const candidate = current ? current + " " + word : word;
+
+    if (candidate.length > maxCharsPerPage) {
+      if (current) {
+        pages.push(current);
+        current = word; // start next page with this word
+      } else {
+        // Single very long word; hard break
+        pages.push(candidate);
+        current = "";
+      }
+    } else {
+      current = candidate;
     }
+  }
 
-    const slice = remaining.slice(0, maxCharsPerPage);
-
-    let breakIndex = Math.max(
-      slice.lastIndexOf("\n\n"),
-      slice.lastIndexOf("\n"),
-      slice.lastIndexOf(" ")
-    );
-
-    if (breakIndex < maxCharsPerPage * 0.5) {
-      breakIndex = maxCharsPerPage;
-    }
-
-    const pageText = slice.slice(0, breakIndex).trim();
-    if (pageText.length > 0) {
-      pages.push(pageText);
-    }
-
-    remaining = remaining.slice(breakIndex).trimStart();
+  if (current.trim().length > 0) {
+    pages.push(current.trim());
   }
 
   if (pages.length === 0) {
@@ -189,7 +192,7 @@ function buildPagesFromContent(html) {
   const plain = htmlToPlainText(memoireContentHTML);
 
   const viewportWidth = window.innerWidth || 1024;
-  const charsPerPage = viewportWidth < 700 ? 480 : 650;
+  const charsPerPage = viewportWidth < 700 ? 480 : 620; // tuned down a bit
 
   memoirePages = paginateText(plain, charsPerPage);
   currentPageIndex = 0;
