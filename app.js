@@ -68,7 +68,7 @@ const authLogout   = document.getElementById("auth-logout");
 
 // ===== Reader state =====
 
-let memoireContentHTML = "";  // raw HTML from Supabase
+let memoireContentHTML = "";  // raw combined HTML from Supabase
 let memoirePages = [];        // array of plain-text pages
 let currentPageIndex = 0;     // index of LEFT page (0,2,4,...)
 
@@ -136,48 +136,50 @@ function updateAuthUI(user) {
 
 // ===== Helpers: reader pagination =====
 
-// Convert the saved HTML to plain text in DOM order
+// Convert the saved HTML to plain text in DOM order, keeping newlines
 function htmlToPlainText(html) {
   const tmp = document.createElement("div");
   tmp.innerHTML = html || "";
-  return tmp.innerText.replace(/\u00A0/g, " ");
+  const text = tmp.innerText.replace(/\u00A0/g, " ");
+  return text;
 }
 
-// NEW: word-based paginator, strictly sequential
-function paginateText(text, maxCharsPerPage = 650) {
+/**
+ * Line-based paginator:
+ * - preserves line order exactly
+ * - fills each page up to maxCharsPerPage
+ * - never reorders or shuffles lines
+ */
+function paginateTextByLines(text, maxCharsPerPage) {
   const pages = [];
   if (!text) {
     pages.push("");
     return pages;
   }
 
-  // Normalize whitespace and keep order
-  const normalized = text.replace(/\r\n/g, "\n").replace(/\s+/g, " ").trim();
-  const words = normalized.split(" ");
+  const normalized = text.replace(/\r\n/g, "\n");
+  const rawLines = normalized.split("\n");
 
   let current = "";
 
-  for (const word of words) {
-    if (!word) continue;
+  for (let i = 0; i < rawLines.length; i++) {
+    const line = rawLines[i];
+    const trimmedLine = line.replace(/\s+$/g, ""); // strip trailing spaces, keep content
 
-    const candidate = current ? current + " " + word : word;
+    const lineToAdd = trimmedLine;
+    const separator = current ? "\n" : "";
+    const candidate = current + separator + lineToAdd;
 
-    if (candidate.length > maxCharsPerPage) {
-      if (current) {
-        pages.push(current);
-        current = word; // start next page with this word
-      } else {
-        // Single very long word; hard break
-        pages.push(candidate);
-        current = "";
-      }
+    if (candidate.length > maxCharsPerPage && current) {
+      pages.push(current);
+      current = lineToAdd;
     } else {
       current = candidate;
     }
   }
 
   if (current.trim().length > 0) {
-    pages.push(current.trim());
+    pages.push(current);
   }
 
   if (pages.length === 0) {
@@ -192,9 +194,9 @@ function buildPagesFromContent(html) {
   const plain = htmlToPlainText(memoireContentHTML);
 
   const viewportWidth = window.innerWidth || 1024;
-  const charsPerPage = viewportWidth < 700 ? 480 : 620; // tuned down a bit
+  const maxCharsPerPage = viewportWidth < 700 ? 420 : 600;
 
-  memoirePages = paginateText(plain, charsPerPage);
+  memoirePages = paginateTextByLines(plain, maxCharsPerPage);
   currentPageIndex = 0;
   updateReaderSpread();
 }
@@ -248,12 +250,13 @@ async function loadMemoireFromSupabase() {
     return;
   }
 
+  // IMPORTANT CHANGE:
+  // Load ALL rows for this user, oldest -> newest, and stitch them together.
   const result = await sb
     .from("memoire_entries")
-    .select("content, updated_at")
+    .select("content, created_at")
     .eq("user_id", user.id)
-    .order("updated_at", { ascending: false })
-    .limit(1);
+    .order("created_at", { ascending: true });
 
   const data = result.data;
   const error = result.error;
@@ -263,10 +266,13 @@ async function loadMemoireFromSupabase() {
     return;
   }
 
-  if (data && data.length > 0 && data[0].content) {
-    const html = data[0].content;
-    editArea.innerHTML = html;
-    buildPagesFromContent(html);
+  if (data && data.length > 0) {
+    const combinedHTML = data
+      .map((row) => row.content || "")
+      .join("<br><br>"); // separate entries a bit
+
+    editArea.innerHTML = combinedHTML;
+    buildPagesFromContent(combinedHTML);
   } else {
     const fallback = "Start writing…";
     editArea.innerHTML = fallback;
@@ -289,6 +295,7 @@ async function saveMemoireToSupabase() {
 
   const content = editArea.innerHTML;
 
+  // Keep using a single canonical row per user going forward
   const result = await sb
     .from("memoire_entries")
     .upsert(
@@ -329,7 +336,7 @@ if (authLogin) {
 
     const result = await sb.auth.signInWithPassword({
       email: authEmail.value,
-      password: authPassword.value
+      password: authEmail.value === "" ? undefined : authPassword.value
     });
 
     const data = result.data;
