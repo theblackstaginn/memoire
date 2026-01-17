@@ -45,8 +45,12 @@ const passwordError = document.getElementById("password-error");
 const btnPwdCancel  = document.getElementById("btn-password-cancel");
 const btnPwdSubmit  = document.getElementById("btn-password-submit");
 
-// Reader close
+// Reader controls
 const btnReaderClose = document.getElementById("btn-reader-close");
+const pageLeft       = document.getElementById("page-left");
+const pageRight      = document.getElementById("page-right");
+const btnPagePrev    = document.getElementById("btn-page-prev");
+const btnPageNext    = document.getElementById("btn-page-next");
 
 // Edit controls
 const btnEditClose = document.getElementById("btn-edit-close");
@@ -61,6 +65,12 @@ const authEmail    = document.getElementById("auth-email");
 const authPassword = document.getElementById("auth-password");
 const authLogin    = document.getElementById("auth-login");
 const authLogout   = document.getElementById("auth-logout");
+
+// ===== Reader state =====
+
+let memoireContentHTML = "";  // raw HTML from Supabase
+let memoirePages = [];        // array of plain-text pages
+let currentPageIndex = 0;     // index of LEFT page (0,2,4,...)
 
 // ===== Helpers: modal handling =====
 
@@ -126,6 +136,102 @@ function updateAuthUI(user) {
   }
 }
 
+// ===== Helpers: reader pagination =====
+
+function htmlToPlainText(html) {
+  const tmp = document.createElement("div");
+  tmp.innerHTML = html || "";
+  // innerText preserves line breaks reasonably well
+  return tmp.innerText.replace(/\u00A0/g, " ");
+}
+
+function paginateText(text, maxCharsPerPage = 900) {
+  const pages = [];
+  if (!text) {
+    pages.push("");
+    return pages;
+  }
+
+  let remaining = text.replace(/\r\n/g, "\n").trim();
+
+  while (remaining.length > 0) {
+    if (remaining.length <= maxCharsPerPage) {
+      pages.push(remaining);
+      break;
+    }
+
+    const slice = remaining.slice(0, maxCharsPerPage);
+    // Try to break on double newline, single newline, then space
+    let breakIndex = Math.max(
+      slice.lastIndexOf("\n\n"),
+      slice.lastIndexOf("\n"),
+      slice.lastIndexOf(" ")
+    );
+
+    // If break point is too early, just hard-cut
+    if (breakIndex < maxCharsPerPage * 0.5) {
+      breakIndex = maxCharsPerPage;
+    }
+
+    const pageText = slice.slice(0, breakIndex).trim();
+    if (pageText.length > 0) {
+      pages.push(pageText);
+    }
+
+    remaining = remaining.slice(breakIndex).trimStart();
+  }
+
+  if (pages.length === 0) {
+    pages.push("");
+  }
+
+  return pages;
+}
+
+function buildPagesFromContent(html) {
+  memoireContentHTML = html || "";
+  const plain = htmlToPlainText(memoireContentHTML);
+  memoirePages = paginateText(plain, 900);
+  currentPageIndex = 0;
+  updateReaderSpread();
+}
+
+function updateReaderSpread() {
+  if (!pageLeft || !pageRight) return;
+
+  if (!memoirePages || memoirePages.length === 0) {
+    pageLeft.textContent = "";
+    pageRight.textContent = "";
+    if (btnPagePrev) btnPagePrev.classList.add("disabled");
+    if (btnPageNext) btnPageNext.classList.add("disabled");
+    return;
+  }
+
+  // Clamp index to valid bounds
+  if (currentPageIndex < 0) currentPageIndex = 0;
+  if (currentPageIndex >= memoirePages.length) {
+    currentPageIndex = Math.max(0, memoirePages.length - 1);
+  }
+  // Keep index even so left/right stay in pairs
+  if (currentPageIndex % 2 !== 0) currentPageIndex--;
+
+  const leftIdx = currentPageIndex;
+  const rightIdx = currentPageIndex + 1;
+
+  pageLeft.textContent = memoirePages[leftIdx] || "";
+  pageRight.textContent = memoirePages[rightIdx] || "";
+
+  const hasPrev = leftIdx > 0;
+  const hasNext = rightIdx < memoirePages.length - 1;
+
+  if (btnPagePrev) {
+    btnPagePrev.classList.toggle("disabled", !hasPrev);
+  }
+  if (btnPageNext) {
+    btnPageNext.classList.toggle("disabled", !hasNext);
+  }
+}
+
 // ===== Supabase: load / save memoire =====
 
 async function loadMemoireFromSupabase() {
@@ -156,9 +262,13 @@ async function loadMemoireFromSupabase() {
   }
 
   if (data && data.length > 0 && data[0].content) {
-    editArea.innerHTML = data[0].content;
+    const html = data[0].content;
+    editArea.innerHTML = html;
+    buildPagesFromContent(html);
   } else {
-    editArea.innerHTML = "Start writing…";
+    const fallback = "Start writing…";
+    editArea.innerHTML = fallback;
+    buildPagesFromContent(fallback);
   }
 }
 
@@ -195,6 +305,8 @@ async function saveMemoireToSupabase() {
     alert("Save failed. Check console for details.");
   } else {
     console.log("Memoire saved to Supabase.");
+    // Rebuild pages so reader reflects latest text
+    buildPagesFromContent(content);
   }
 }
 
@@ -242,6 +354,10 @@ if (authLogout) {
     if (editArea) {
       editArea.innerHTML = "Start writing…";
     }
+    memoireContentHTML = "";
+    memoirePages = [];
+    currentPageIndex = 0;
+    updateReaderSpread();
   });
 }
 
@@ -256,6 +372,11 @@ if (authLogout) {
   const user = await getCurrentUser();
   updateAuthUI(user);
   console.log("Memoire initialized, user:", user);
+
+  // If already logged in, load content/pages immediately
+  if (user) {
+    await loadMemoireFromSupabase();
+  }
 })();
 
 // ===== Book Flow: warning -> read =====
@@ -273,9 +394,28 @@ if (btnWarningLeave) {
   });
 }
 
+async function openReader() {
+  // If Supabase is available, prefer cloud content (requires login)
+  if (sb) {
+    const user = await getCurrentUser();
+    if (!user) {
+      alert("Log in first using the bar at the top.");
+      return;
+    }
+    await loadMemoireFromSupabase();
+  } else {
+    // Fallback: use whatever is currently in the edit area
+    const html = editArea ? editArea.innerHTML : "";
+    buildPagesFromContent(html);
+  }
+
+  updateReaderSpread();
+  openModal(readerModal);
+}
+
 if (btnWarningOk) {
   btnWarningOk.addEventListener("click", function () {
-    openModal(readerModal);
+    openReader();
   });
 }
 
@@ -319,6 +459,9 @@ async function submitPassword() {
     // Load from backend (if available), then open editor
     if (sb) {
       await loadMemoireFromSupabase();
+    } else if (editArea) {
+      // No backend: at least build pages from local content
+      buildPagesFromContent(editArea.innerHTML);
     }
     openModal(editModal);
   } else {
@@ -358,6 +501,26 @@ if (btnEditClose) {
 if (btnEditSave) {
   btnEditSave.addEventListener("click", function () {
     saveMemoireToSupabase();
+  });
+}
+
+// ===== Reader page navigation =====
+
+if (btnPagePrev) {
+  btnPagePrev.addEventListener("click", function () {
+    if (!memoirePages || memoirePages.length === 0) return;
+    if (currentPageIndex <= 0) return;
+    currentPageIndex = Math.max(0, currentPageIndex - 2);
+    updateReaderSpread();
+  });
+}
+
+if (btnPageNext) {
+  btnPageNext.addEventListener("click", function () {
+    if (!memoirePages || memoirePages.length === 0) return;
+    if (currentPageIndex + 2 >= memoirePages.length) return;
+    currentPageIndex = currentPageIndex + 2;
+    updateReaderSpread();
   });
 }
 
