@@ -2,8 +2,6 @@ console.log("Memoire app.js loaded");
 
 // ===== Supabase init (CDN global) =====
 const SUPABASE_URL = "https://eepfsaulkakeqfucewau.supabase.co";
-
-// Your real publishable / anon key
 const SUPABASE_ANON_KEY = "sb_publishable_kXKPON3Ass12XEj7KAdlzw_7JkNjUpL";
 
 let sb = null;
@@ -21,8 +19,6 @@ if (typeof supabase === "undefined") {
 const PASSWORD = "stag";
 
 // ===== DOM hooks =====
-
-// Overlay + modals
 const overlay       = document.getElementById("modal-overlay");
 const warningModal  = document.getElementById("warning-modal");
 const passwordModal = document.getElementById("password-modal");
@@ -31,35 +27,27 @@ const editModal     = document.getElementById("edit-modal");
 
 const modals = [warningModal, passwordModal, readerModal, editModal];
 
-// Desk buttons
 const bookHitbox = document.getElementById("book-hitbox");
 const penHitbox  = document.getElementById("pen-hitbox");
 
-// Warning buttons
 const btnWarningLeave = document.getElementById("btn-warning-leave");
 const btnWarningOk    = document.getElementById("btn-warning-ok");
 
-// Password controls
 const passwordInput = document.getElementById("password-input");
 const passwordError = document.getElementById("password-error");
 const btnPwdCancel  = document.getElementById("btn-password-cancel");
 const btnPwdSubmit  = document.getElementById("btn-password-submit");
 
-// Reader controls
 const btnReaderClose = document.getElementById("btn-reader-close");
 const pageLeft       = document.getElementById("page-left");
 const pageRight      = document.getElementById("page-right");
 const btnPagePrev    = document.getElementById("btn-page-prev");
 const btnPageNext    = document.getElementById("btn-page-next");
 
-// Edit controls
 const btnEditClose = document.getElementById("btn-edit-close");
 const btnEditSave  = document.getElementById("btn-edit-save");
+const editArea     = document.getElementById("edit-area");
 
-// Edit area
-const editArea = document.getElementById("edit-area");
-
-// Auth bar
 const authStatus   = document.getElementById("auth-status");
 const authEmail    = document.getElementById("auth-email");
 const authPassword = document.getElementById("auth-password");
@@ -67,54 +55,47 @@ const authLogin    = document.getElementById("auth-login");
 const authLogout   = document.getElementById("auth-logout");
 
 // ===== Reader state =====
-
-let memoireContentHTML = "";
-let memoirePages = [];
+let memoPages = [];
 let currentPageIndex = 0;
 
-// ===== Helpers: modal handling =====
-
+// ===== Modal helpers =====
 function hideAllModals() {
-  modals.forEach(function (m) {
-    if (m) m.classList.add("hidden");
-  });
+  modals.forEach(m => m && m.classList.add("hidden"));
 }
 
 function openModal(modal) {
+  if (!overlay || !modal) return;
   overlay.classList.remove("hidden");
   hideAllModals();
   modal.classList.remove("hidden");
 }
 
 function closeOverlay() {
+  if (!overlay) return;
   overlay.classList.add("hidden");
   hideAllModals();
 }
 
-// ===== Helpers: auth =====
-
+// ===== Auth helpers =====
 async function getCurrentUser() {
   if (!sb) return null;
-
-  const result = await sb.auth.getUser();
-  if (result.error) {
-    const msg = (result.error.message || "").toLowerCase();
+  const { data, error } = await sb.auth.getUser();
+  if (error) {
+    const msg = (error.message || "").toLowerCase();
     if (msg.includes("auth session missing")) return null;
-    console.error("Error getting user:", result.error);
+    console.error("Error getting user:", error);
     return null;
   }
-
-  return result.data.user || null;
+  return data.user || null;
 }
 
 function updateAuthUI(user) {
-  const isLoggedIn = !!user;
-
-  authStatus.textContent = isLoggedIn
+  const loggedIn = !!user;
+  authStatus.textContent = loggedIn
     ? "Signed in as " + user.email
     : "Not signed in";
 
-  if (isLoggedIn) {
+  if (loggedIn) {
     authLogin.classList.add("hidden");
     authLogout.classList.remove("hidden");
   } else {
@@ -123,62 +104,67 @@ function updateAuthUI(user) {
   }
 }
 
-// ===== Pagination Helpers =====
+// ===== Pagination =====
 
+// Turn HTML into plain text, preserving order
 function htmlToPlainText(html) {
   const tmp = document.createElement("div");
   tmp.innerHTML = html || "";
-  const text = tmp.innerText.replace(/\u00A0/g, " ");
-  return text;
+  const txt = (tmp.textContent || tmp.innerText || "").replace(/\u00A0/g, " ");
+  return txt;
 }
 
-function paginateTextByLines(text, maxCharsPerPage) {
+// Simple char-based paginator: never drops characters, just slices
+function paginateByChars(text, maxChars) {
+  if (!text) return [""];
   const pages = [];
-  if (!text) {
-    pages.push("");
-    return pages;
-  }
+  let idx = 0;
+  const len = text.length;
 
-  const normalized = text.replace(/\r\n/g, "\n");
-  const rawLines = normalized.split("\n");
-
-  let current = "";
-
-  for (let line of rawLines) {
-    const trimmed = line.replace(/\s+$/g, "");
-    const sep = current ? "\n" : "";
-    const candidate = current + sep + trimmed;
-
-    if (candidate.length > maxCharsPerPage && current) {
-      pages.push(current);
-      current = trimmed;
-    } else {
-      current = candidate;
+  while (idx < len) {
+    let end = idx + maxChars;
+    if (end >= len) {
+      pages.push(text.slice(idx));
+      break;
     }
+
+    // Try to cut at a space before the limit
+    let cut = text.lastIndexOf(" ", end);
+    if (cut <= idx + maxChars * 0.4) {
+      // Space is way too far back; just hard cut
+      cut = end;
+    }
+
+    pages.push(text.slice(idx, cut));
+    idx = cut;
   }
 
-  if (current.trim().length > 0) pages.push(current);
-  if (pages.length === 0) pages.push("");
-
-  return pages;
+  return pages.length ? pages : [""];
 }
 
-function buildPagesFromContent(html) {
-  memoireContentHTML = html || "";
-  const plain = htmlToPlainText(memoireContentHTML);
+function buildPagesFromEditArea() {
+  if (!editArea) {
+    memoPages = [""];
+    currentPageIndex = 0;
+    updateReaderSpread();
+    return;
+  }
 
-  const viewportWidth = window.innerWidth || 1024;
+  const html = editArea.innerHTML;
+  const plain = htmlToPlainText(html);
 
-  // Shrunk capacity so right page fills properly
-  const maxCharsPerPage = viewportWidth < 700 ? 320 : 430;
+  const vw = window.innerWidth || 1024;
+  const maxCharsPerPage = vw < 700 ? 600 : 900; // big enough to look like full pages
 
-  memoirePages = paginateTextByLines(plain, maxCharsPerPage);
+  memoPages = paginateByChars(plain, maxCharsPerPage);
   currentPageIndex = 0;
   updateReaderSpread();
 }
 
 function updateReaderSpread() {
-  if (!memoirePages || memoirePages.length === 0) {
+  if (!pageLeft || !pageRight) return;
+
+  if (!memoPages || memoPages.length === 0) {
     pageLeft.textContent = "";
     pageRight.textContent = "";
     btnPagePrev.classList.add("disabled");
@@ -187,57 +173,55 @@ function updateReaderSpread() {
   }
 
   if (currentPageIndex < 0) currentPageIndex = 0;
-  if (currentPageIndex >= memoirePages.length) {
-    currentPageIndex = Math.max(0, memoirePages.length - 1);
+  if (currentPageIndex >= memoPages.length) {
+    currentPageIndex = Math.max(0, memoPages.length - 1);
   }
   if (currentPageIndex % 2 !== 0) currentPageIndex--;
 
   const leftIdx = currentPageIndex;
   const rightIdx = currentPageIndex + 1;
 
-  pageLeft.textContent = memoirePages[leftIdx] || "";
-  pageRight.textContent = memoirePages[rightIdx] || "";
+  pageLeft.textContent = memoPages[leftIdx] || "";
+  pageRight.textContent = memoPages[rightIdx] || "";
 
-  const hasPrev = leftIdx > 0;
-  const hasNext = rightIdx < memoirePages.length - 1;
+  const hasPrevSpread = currentPageIndex > 0;
+  const hasNextSpread = currentPageIndex + 2 < memoPages.length;
 
-  btnPagePrev.classList.toggle("disabled", !hasPrev);
-  btnPageNext.classList.toggle("disabled", !hasNext);
+  btnPagePrev.classList.toggle("disabled", !hasPrevSpread);
+  btnPageNext.classList.toggle("disabled", !hasNextSpread);
 }
 
-// ===== Supabase: load / save =====
-
+// ===== Supabase load/save =====
 async function loadMemoireFromSupabase() {
-  if (!sb) return;
-  if (!editArea) return;
-
+  if (!sb || !editArea) return;
   const user = await getCurrentUser();
   if (!user) return;
 
-  const result = await sb
+  const { data, error } = await sb
     .from("memoire_entries")
     .select("content, updated_at")
     .eq("user_id", user.id)
     .order("updated_at", { ascending: false })
     .limit(1);
 
-  if (result.error) {
-    console.error("Error loading memoire:", result.error);
+  if (error) {
+    console.error("Error loading memoire:", error);
     return;
   }
 
-  if (result.data && result.data.length > 0 && result.data[0].content) {
-    const html = result.data[0].content;
-    editArea.innerHTML = html;
-    buildPagesFromContent(html);
+  if (data && data.length > 0 && data[0].content) {
+    editArea.innerHTML = data[0].content;
   } else {
-    const fallback = "Start writing…";
-    editArea.innerHTML = fallback;
-    buildPagesFromContent(fallback);
+    editArea.innerHTML = "Start writing…";
   }
+
+  // Build pages from whatever we just loaded
+  buildPagesFromEditArea();
 }
 
 async function saveMemoireToSupabase() {
+  if (!sb || !editArea) return;
+
   const user = await getCurrentUser();
   if (!user) {
     alert("You must be logged in to save.");
@@ -246,7 +230,7 @@ async function saveMemoireToSupabase() {
 
   const content = editArea.innerHTML;
 
-  const result = await sb
+  const { error } = await sb
     .from("memoire_entries")
     .upsert(
       {
@@ -257,120 +241,190 @@ async function saveMemoireToSupabase() {
       { onConflict: "user_id" }
     );
 
-  if (result.error) {
-    console.error("Save failed:", result.error);
+  if (error) {
+    console.error("Save failed:", error);
     alert("Save failed. Check console.");
-  } else {
-    console.log("Memoire saved.");
-    buildPagesFromContent(content);
+    return;
   }
+
+  console.log("Memoire saved.");
+  buildPagesFromEditArea();
 }
 
-// ===== Auth Events =====
+// ===== Auth events =====
+if (authLogin) {
+  authLogin.addEventListener("click", async () => {
+    if (!sb) {
+      alert("Backend not connected.");
+      return;
+    }
+    if (!authEmail.value || !authPassword.value) {
+      alert("Enter email & password.");
+      return;
+    }
 
-authLogin.addEventListener("click", async () => {
-  if (!authEmail.value || !authPassword.value) {
-    alert("Enter email & password.");
-    return;
-  }
+    const { data, error } = await sb.auth.signInWithPassword({
+      email: authEmail.value,
+      password: authPassword.value
+    });
 
-  const result = await sb.auth.signInWithPassword({
-    email: authEmail.value,
-    password: authPassword.value
+    if (error) {
+      console.error("Login error:", error);
+      alert("Login failed.");
+      return;
+    }
+
+    updateAuthUI(data.user);
+    await loadMemoireFromSupabase();
   });
+}
 
-  if (result.error) {
-    alert("Login failed.");
+if (authLogout) {
+  authLogout.addEventListener("click", async () => {
+    if (sb) await sb.auth.signOut();
+    updateAuthUI(null);
+    if (editArea) editArea.innerHTML = "Start writing…";
+    memoPages = [""];
+    currentPageIndex = 0;
+    updateReaderSpread();
+  });
+}
+
+// Initial auth check
+(async function init() {
+  if (!sb) {
+    console.warn("Supabase not configured; local-only mode.");
+    buildPagesFromEditArea();
     return;
   }
-
-  updateAuthUI(result.data.user);
-  await loadMemoireFromSupabase();
-});
-
-authLogout.addEventListener("click", async () => {
-  await sb.auth.signOut();
-  updateAuthUI(null);
-  editArea.innerHTML = "Start writing…";
-  memoirePages = [];
-  updateReaderSpread();
-});
-
-(async function () {
   const user = await getCurrentUser();
   updateAuthUI(user);
-  if (user) await loadMemoireFromSupabase();
+  if (user) {
+    await loadMemoireFromSupabase();
+  } else {
+    buildPagesFromEditArea();
+  }
 })();
 
-// ===== Book Flow =====
+// ===== Book flow =====
+if (bookHitbox) {
+  bookHitbox.addEventListener("click", () => {
+    openModal(warningModal);
+  });
+}
 
-bookHitbox.addEventListener("click", () => openModal(warningModal));
-btnWarningLeave.addEventListener("click", () => closeOverlay());
+if (btnWarningLeave) {
+  btnWarningLeave.addEventListener("click", () => {
+    closeOverlay();
+  });
+}
 
-btnWarningOk.addEventListener("click", async () => {
-  const user = await getCurrentUser();
-  if (!user) {
-    alert("Log in first.");
-    return;
-  }
-  await loadMemoireFromSupabase();
-  openModal(readerModal);
-});
+if (btnWarningOk) {
+  btnWarningOk.addEventListener("click", () => {
+    // Always build reader pages from whatever is in the editor right now
+    buildPagesFromEditArea();
+    openModal(readerModal);
+  });
+}
 
-btnReaderClose.addEventListener("click", () => closeOverlay());
+if (btnReaderClose) {
+  btnReaderClose.addEventListener("click", () => {
+    closeOverlay();
+  });
+}
 
-// ===== Pen Flow =====
+// ===== Pen flow (edit) =====
+if (penHitbox) {
+  penHitbox.addEventListener("click", () => {
+    passwordInput.value = "";
+    passwordError.classList.add("hidden");
+    openModal(passwordModal);
+    setTimeout(() => passwordInput.focus(), 50);
+  });
+}
 
-penHitbox.addEventListener("click", () => {
-  passwordInput.value = "";
-  passwordError.classList.add("hidden");
-  openModal(passwordModal);
-  setTimeout(() => passwordInput.focus(), 50);
-});
-
-btnPwdSubmit.addEventListener("click", async () => {
-  if (passwordInput.value.trim() !== PASSWORD) {
+async function handlePasswordSubmit() {
+  const value = passwordInput.value.trim();
+  if (value !== PASSWORD) {
     passwordError.classList.remove("hidden");
     return;
   }
+  passwordError.classList.add("hidden");
 
-  const user = await getCurrentUser();
-  if (!user) {
-    alert("Log in first.");
-    return;
+  // Make sure we’re in sync with Supabase once when entering edit
+  if (sb) {
+    const user = await getCurrentUser();
+    if (!user) {
+      alert("Log in first.");
+      return;
+    }
+    await loadMemoireFromSupabase();
   }
 
-  await loadMemoireFromSupabase();
   openModal(editModal);
-});
+}
 
-btnPwdCancel.addEventListener("click", () => closeOverlay());
+if (btnPwdSubmit) {
+  btnPwdSubmit.addEventListener("click", () => {
+    handlePasswordSubmit();
+  });
+}
 
-// ===== Edit Save & Close =====
+if (passwordInput) {
+  passwordInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handlePasswordSubmit();
+    }
+  });
+}
 
-btnEditSave.addEventListener("click", () => saveMemoireToSupabase());
-btnEditClose.addEventListener("click", () => closeOverlay());
+if (btnPwdCancel) {
+  btnPwdCancel.addEventListener("click", () => {
+    closeOverlay();
+  });
+}
 
-// ===== Page Navigation =====
+// ===== Edit save/close =====
+if (btnEditSave) {
+  btnEditSave.addEventListener("click", () => {
+    saveMemoireToSupabase();
+  });
+}
 
-btnPagePrev.addEventListener("click", () => {
-  if (currentPageIndex > 0) {
-    currentPageIndex -= 2;
+if (btnEditClose) {
+  btnEditClose.addEventListener("click", () => {
+    closeOverlay();
+  });
+}
+
+// ===== Reader page navigation =====
+if (btnPagePrev) {
+  btnPagePrev.addEventListener("click", () => {
+    if (!memoPages || memoPages.length === 0) return;
+    if (currentPageIndex <= 0) return;
+    currentPageIndex = Math.max(0, currentPageIndex - 2);
     updateReaderSpread();
-  }
-});
+  });
+}
 
-btnPageNext.addEventListener("click", () => {
-  if (currentPageIndex + 2 < memoirePages.length) {
+if (btnPageNext) {
+  btnPageNext.addEventListener("click", () => {
+    if (!memoPages || memoPages.length === 0) return;
+    if (currentPageIndex + 2 >= memoPages.length) return;
     currentPageIndex += 2;
     updateReaderSpread();
+  });
+});
+
+// ===== ESC key =====
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && overlay && !overlay.classList.contains("hidden")) {
+    closeOverlay();
   }
 });
 
-// ===== ESC to close =====
-
-document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape" && !overlay.classList.contains("hidden")) {
-    closeOverlay();
-  }
+// ===== Rebuild pages on resize (optional nicety) =====
+window.addEventListener("resize", () => {
+  buildPagesFromEditArea();
 });
