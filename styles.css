@@ -248,7 +248,7 @@ body {
   position: absolute;
   top: 18%;
   bottom: 14%;
-  width: 34%; /* was 36%, tightened to avoid overlap */
+  width: 32%;        /* narrower so it stays on the paper */
   padding: 0 18px;
   overflow: hidden;
   color: #2b2217;
@@ -259,11 +259,11 @@ body {
 }
 
 .page-left {
-  left: 13%;
+  left: 13%;         /* keeps left page on its paper */
 }
 
 .page-right {
-  right: 9%; /* was 13%, moved inward toward gutter */
+  right: 16%;        /* larger right value = pulled toward center */
 }
 
 /* Page nav buttons */
@@ -394,16 +394,16 @@ body {
   .page {
     top: 16%;
     bottom: 12%;
-    width: 38%; /* adjusted for mobile */
+    width: 40%;     /* still narrower on mobile */
     padding: 0 10px;
   }
 
   .page-left {
-    left: 10%;
+    left: 9%;
   }
 
   .page-right {
-    right: 8%; /* nudged inward */
+    right: 11%;     /* pulled toward center relative to outer edge */
   }
 
   .page-nav img {
