@@ -103,12 +103,10 @@ async function getCurrentUser() {
   const error = result.error;
 
   if (error) {
-    // Normal on first load when nobody is logged in
     const msg = (error.message || "").toLowerCase();
     if (msg.indexOf("auth session missing") !== -1) {
       return null;
     }
-
     console.error("Error getting user:", error);
     return null;
   }
@@ -141,7 +139,6 @@ function updateAuthUI(user) {
 function htmlToPlainText(html) {
   const tmp = document.createElement("div");
   tmp.innerHTML = html || "";
-  // innerText preserves line breaks reasonably well
   return tmp.innerText.replace(/\u00A0/g, " ");
 }
 
@@ -161,14 +158,13 @@ function paginateText(text, maxCharsPerPage = 650) {
     }
 
     const slice = remaining.slice(0, maxCharsPerPage);
-    // Try to break on double newline, single newline, then space
+
     let breakIndex = Math.max(
       slice.lastIndexOf("\n\n"),
       slice.lastIndexOf("\n"),
       slice.lastIndexOf(" ")
     );
 
-    // If break point is too early, just hard-cut
     if (breakIndex < maxCharsPerPage * 0.5) {
       breakIndex = maxCharsPerPage;
     }
@@ -191,7 +187,11 @@ function paginateText(text, maxCharsPerPage = 650) {
 function buildPagesFromContent(html) {
   memoireContentHTML = html || "";
   const plain = htmlToPlainText(memoireContentHTML);
-  memoirePages = paginateText(plain, 900);
+
+  const viewportWidth = window.innerWidth || 1024;
+  const charsPerPage = viewportWidth < 700 ? 480 : 650;
+
+  memoirePages = paginateText(plain, charsPerPage);
   currentPageIndex = 0;
   updateReaderSpread();
 }
@@ -207,12 +207,10 @@ function updateReaderSpread() {
     return;
   }
 
-  // Clamp index to valid bounds
   if (currentPageIndex < 0) currentPageIndex = 0;
   if (currentPageIndex >= memoirePages.length) {
     currentPageIndex = Math.max(0, memoirePages.length - 1);
   }
-  // Keep index even so left/right stay in pairs
   if (currentPageIndex % 2 !== 0) currentPageIndex--;
 
   const leftIdx = currentPageIndex;
@@ -249,8 +247,9 @@ async function loadMemoireFromSupabase() {
 
   const result = await sb
     .from("memoire_entries")
-    .select("content")
+    .select("content, updated_at")
     .eq("user_id", user.id)
+    .order("updated_at", { ascending: false })
     .limit(1);
 
   const data = result.data;
@@ -305,7 +304,6 @@ async function saveMemoireToSupabase() {
     alert("Save failed. Check console for details.");
   } else {
     console.log("Memoire saved to Supabase.");
-    // Rebuild pages so reader reflects latest text
     buildPagesFromContent(content);
   }
 }
@@ -373,7 +371,6 @@ if (authLogout) {
   updateAuthUI(user);
   console.log("Memoire initialized, user:", user);
 
-  // If already logged in, load content/pages immediately
   if (user) {
     await loadMemoireFromSupabase();
   }
@@ -395,7 +392,6 @@ if (btnWarningLeave) {
 }
 
 async function openReader() {
-  // If Supabase is available, prefer cloud content (requires login)
   if (sb) {
     const user = await getCurrentUser();
     if (!user) {
@@ -404,7 +400,6 @@ async function openReader() {
     }
     await loadMemoireFromSupabase();
   } else {
-    // Fallback: use whatever is currently in the edit area
     const html = editArea ? editArea.innerHTML : "";
     buildPagesFromContent(html);
   }
@@ -425,7 +420,7 @@ if (btnReaderClose) {
   });
 }
 
-// ===== Pen Flow: password -> edit (with Supabase load) =====
+// ===== Pen Flow: password -> edit =====
 
 if (penHitbox) {
   penHitbox.addEventListener("click", function () {
@@ -456,11 +451,9 @@ async function submitPassword() {
       return;
     }
 
-    // Load from backend (if available), then open editor
     if (sb) {
       await loadMemoireFromSupabase();
     } else if (editArea) {
-      // No backend: at least build pages from local content
       buildPagesFromContent(editArea.innerHTML);
     }
     openModal(editModal);
