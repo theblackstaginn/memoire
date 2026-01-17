@@ -145,7 +145,7 @@ function htmlToPlainText(html) {
   return tmp.innerText.replace(/\u00A0/g, " ");
 }
 
-function paginateText(text, maxCharsPerPage = 900) {
+function paginateText(text, maxCharsPerPage = 650) {
   const pages = [];
   if (!text) {
     pages.push("");
