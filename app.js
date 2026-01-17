@@ -68,9 +68,9 @@ const authLogout   = document.getElementById("auth-logout");
 
 // ===== Reader state =====
 
-let memoireContentHTML = "";  // raw HTML from Supabase
-let memoirePages = [];        // array of plain-text pages
-let currentPageIndex = 0;     // index of LEFT page (0,2,4,...)
+let memoireContentHTML = "";
+let memoirePages = [];
+let currentPageIndex = 0;
 
 // ===== Helpers: modal handling =====
 
@@ -81,14 +81,12 @@ function hideAllModals() {
 }
 
 function openModal(modal) {
-  if (!overlay || !modal) return;
   overlay.classList.remove("hidden");
   hideAllModals();
   modal.classList.remove("hidden");
 }
 
 function closeOverlay() {
-  if (!overlay) return;
   overlay.classList.add("hidden");
   hideAllModals();
 }
@@ -99,44 +97,34 @@ async function getCurrentUser() {
   if (!sb) return null;
 
   const result = await sb.auth.getUser();
-  const data = result.data;
-  const error = result.error;
-
-  if (error) {
-    const msg = (error.message || "").toLowerCase();
-    if (msg.indexOf("auth session missing") !== -1) {
-      return null;
-    }
-    console.error("Error getting user:", error);
+  if (result.error) {
+    const msg = (result.error.message || "").toLowerCase();
+    if (msg.includes("auth session missing")) return null;
+    console.error("Error getting user:", result.error);
     return null;
   }
 
-  return data && data.user ? data.user : null;
+  return result.data.user || null;
 }
 
 function updateAuthUI(user) {
   const isLoggedIn = !!user;
 
-  if (authStatus) {
-    authStatus.textContent = isLoggedIn
-      ? "Signed in as " + user.email
-      : "Not signed in";
-  }
+  authStatus.textContent = isLoggedIn
+    ? "Signed in as " + user.email
+    : "Not signed in";
 
-  if (authLogin && authLogout) {
-    if (isLoggedIn) {
-      authLogin.classList.add("hidden");
-      authLogout.classList.remove("hidden");
-    } else {
-      authLogin.classList.remove("hidden");
-      authLogout.classList.add("hidden");
-    }
+  if (isLoggedIn) {
+    authLogin.classList.add("hidden");
+    authLogout.classList.remove("hidden");
+  } else {
+    authLogin.classList.remove("hidden");
+    authLogout.classList.add("hidden");
   }
 }
 
-// ===== Helpers: reader pagination =====
+// ===== Pagination Helpers =====
 
-// Convert the saved HTML to plain text in DOM order, keeping newlines
 function htmlToPlainText(html) {
   const tmp = document.createElement("div");
   tmp.innerHTML = html || "";
@@ -144,11 +132,6 @@ function htmlToPlainText(html) {
   return text;
 }
 
-/**
- * Line-based paginator:
- * - preserves line order exactly
- * - fills each page up to maxCharsPerPage
- */
 function paginateTextByLines(text, maxCharsPerPage) {
   const pages = [];
   if (!text) {
@@ -161,29 +144,21 @@ function paginateTextByLines(text, maxCharsPerPage) {
 
   let current = "";
 
-  for (let i = 0; i < rawLines.length; i++) {
-    const line = rawLines[i];
-    const trimmedLine = line.replace(/\s+$/g, "");
-
-    const lineToAdd = trimmedLine;
-    const separator = current ? "\n" : "";
-    const candidate = current + separator + lineToAdd;
+  for (let line of rawLines) {
+    const trimmed = line.replace(/\s+$/g, "");
+    const sep = current ? "\n" : "";
+    const candidate = current + sep + trimmed;
 
     if (candidate.length > maxCharsPerPage && current) {
       pages.push(current);
-      current = lineToAdd;
+      current = trimmed;
     } else {
       current = candidate;
     }
   }
 
-  if (current.trim().length > 0) {
-    pages.push(current);
-  }
-
-  if (pages.length === 0) {
-    pages.push("");
-  }
+  if (current.trim().length > 0) pages.push(current);
+  if (pages.length === 0) pages.push("");
 
   return pages;
 }
@@ -193,7 +168,9 @@ function buildPagesFromContent(html) {
   const plain = htmlToPlainText(memoireContentHTML);
 
   const viewportWidth = window.innerWidth || 1024;
-  const maxCharsPerPage = viewportWidth < 700 ? 420 : 600;
+
+  // Shrunk capacity so right page fills properly
+  const maxCharsPerPage = viewportWidth < 700 ? 320 : 430;
 
   memoirePages = paginateTextByLines(plain, maxCharsPerPage);
   currentPageIndex = 0;
@@ -201,13 +178,11 @@ function buildPagesFromContent(html) {
 }
 
 function updateReaderSpread() {
-  if (!pageLeft || !pageRight) return;
-
   if (!memoirePages || memoirePages.length === 0) {
     pageLeft.textContent = "";
     pageRight.textContent = "";
-    if (btnPagePrev) btnPagePrev.classList.add("disabled");
-    if (btnPageNext) btnPageNext.classList.add("disabled");
+    btnPagePrev.classList.add("disabled");
+    btnPageNext.classList.add("disabled");
     return;
   }
 
@@ -226,30 +201,19 @@ function updateReaderSpread() {
   const hasPrev = leftIdx > 0;
   const hasNext = rightIdx < memoirePages.length - 1;
 
-  if (btnPagePrev) {
-    btnPagePrev.classList.toggle("disabled", !hasPrev);
-  }
-  if (btnPageNext) {
-    btnPageNext.classList.toggle("disabled", !hasNext);
-  }
+  btnPagePrev.classList.toggle("disabled", !hasPrev);
+  btnPageNext.classList.toggle("disabled", !hasNext);
 }
 
-// ===== Supabase: load / save memoire =====
+// ===== Supabase: load / save =====
 
 async function loadMemoireFromSupabase() {
-  if (!sb) {
-    console.warn("Supabase not configured; skipping load.");
-    return;
-  }
+  if (!sb) return;
   if (!editArea) return;
 
   const user = await getCurrentUser();
-  if (!user) {
-    console.warn("No user logged in; cannot load memoire.");
-    return;
-  }
+  if (!user) return;
 
-  // Back to the known-good pattern: get the latest row by updated_at
   const result = await sb
     .from("memoire_entries")
     .select("content, updated_at")
@@ -257,16 +221,13 @@ async function loadMemoireFromSupabase() {
     .order("updated_at", { ascending: false })
     .limit(1);
 
-  const data = result.data;
-  const error = result.error;
-
-  if (error) {
-    console.error("Error loading memoire:", error);
+  if (result.error) {
+    console.error("Error loading memoire:", result.error);
     return;
   }
 
-  if (data && data.length > 0 && data[0].content) {
-    const html = data[0].content;
+  if (result.data && result.data.length > 0 && result.data[0].content) {
+    const html = result.data[0].content;
     editArea.innerHTML = html;
     buildPagesFromContent(html);
   } else {
@@ -277,12 +238,6 @@ async function loadMemoireFromSupabase() {
 }
 
 async function saveMemoireToSupabase() {
-  if (!sb) {
-    alert("Backend is not connected; cannot save to cloud.");
-    return;
-  }
-  if (!editArea) return;
-
   const user = await getCurrentUser();
   if (!user) {
     alert("You must be logged in to save.");
@@ -302,230 +257,120 @@ async function saveMemoireToSupabase() {
       { onConflict: "user_id" }
     );
 
-  const error = result.error;
-
-  if (error) {
-    console.error("Save failed:", error);
-    alert("Save failed. Check console for details.");
+  if (result.error) {
+    console.error("Save failed:", result.error);
+    alert("Save failed. Check console.");
   } else {
-    console.log("Memoire saved to Supabase.");
+    console.log("Memoire saved.");
     buildPagesFromContent(content);
   }
 }
 
-// ===== Auth events =====
+// ===== Auth Events =====
 
-if (authLogin) {
-  authLogin.addEventListener("click", async function () {
-    console.log("Login button clicked");
-
-    if (!sb) {
-      alert("Backend is not connected or anon key is incorrect; login disabled.");
-      return;
-    }
-
-    if (!authEmail.value || !authPassword.value) {
-      alert("Enter email and password.");
-      return;
-    }
-
-    const result = await sb.auth.signInWithPassword({
-      email: authEmail.value,
-      password: authPassword.value
-    });
-
-    const data = result.data;
-    const error = result.error;
-
-    if (error) {
-      console.error("Login error:", error);
-      alert("Login failed. Check email/password or Supabase config.");
-      return;
-    }
-
-    updateAuthUI(data.user);
-    await loadMemoireFromSupabase();
-  });
-}
-
-if (authLogout) {
-  authLogout.addEventListener("click", async function () {
-    if (sb) {
-      await sb.auth.signOut();
-    }
-    updateAuthUI(null);
-    if (editArea) {
-      editArea.innerHTML = "Start writing…";
-    }
-    memoireContentHTML = "";
-    memoirePages = [];
-    currentPageIndex = 0;
-    updateReaderSpread();
-  });
-}
-
-// Check auth state on load (only if backend available)
-(async function () {
-  if (!sb) {
-    console.warn(
-      "Backend not available or anon key invalid; running in local-only mode."
-    );
+authLogin.addEventListener("click", async () => {
+  if (!authEmail.value || !authPassword.value) {
+    alert("Enter email & password.");
     return;
   }
+
+  const result = await sb.auth.signInWithPassword({
+    email: authEmail.value,
+    password: authPassword.value
+  });
+
+  if (result.error) {
+    alert("Login failed.");
+    return;
+  }
+
+  updateAuthUI(result.data.user);
+  await loadMemoireFromSupabase();
+});
+
+authLogout.addEventListener("click", async () => {
+  await sb.auth.signOut();
+  updateAuthUI(null);
+  editArea.innerHTML = "Start writing…";
+  memoirePages = [];
+  updateReaderSpread();
+});
+
+(async function () {
   const user = await getCurrentUser();
   updateAuthUI(user);
-  console.log("Memoire initialized, user:", user);
-
-  if (user) {
-    await loadMemoireFromSupabase();
-  }
+  if (user) await loadMemoireFromSupabase();
 })();
 
-// ===== Book Flow: warning -> read =====
+// ===== Book Flow =====
 
-if (bookHitbox) {
-  bookHitbox.addEventListener("click", function () {
-    console.log("Book clicked");
-    openModal(warningModal);
-  });
-}
+bookHitbox.addEventListener("click", () => openModal(warningModal));
+btnWarningLeave.addEventListener("click", () => closeOverlay());
 
-if (btnWarningLeave) {
-  btnWarningLeave.addEventListener("click", function () {
-    closeOverlay();
-  });
-}
-
-async function openReader() {
-  if (sb) {
-    const user = await getCurrentUser();
-    if (!user) {
-      alert("Log in first using the bar at the top.");
-      return;
-    }
-    await loadMemoireFromSupabase();
-  } else {
-    const html = editArea ? editArea.innerHTML : "";
-    buildPagesFromContent(html);
+btnWarningOk.addEventListener("click", async () => {
+  const user = await getCurrentUser();
+  if (!user) {
+    alert("Log in first.");
+    return;
   }
-
-  updateReaderSpread();
+  await loadMemoireFromSupabase();
   openModal(readerModal);
-}
+});
 
-if (btnWarningOk) {
-  btnWarningOk.addEventListener("click", function () {
-    openReader();
-  });
-}
+btnReaderClose.addEventListener("click", () => closeOverlay());
 
-if (btnReaderClose) {
-  btnReaderClose.addEventListener("click", function () {
-    closeOverlay();
-  });
-}
+// ===== Pen Flow =====
 
-// ===== Pen Flow: password -> edit =====
+penHitbox.addEventListener("click", () => {
+  passwordInput.value = "";
+  passwordError.classList.add("hidden");
+  openModal(passwordModal);
+  setTimeout(() => passwordInput.focus(), 50);
+});
 
-if (penHitbox) {
-  penHitbox.addEventListener("click", function () {
-    console.log("Pen clicked");
-    if (passwordInput) passwordInput.value = "";
-    if (passwordError) passwordError.classList.add("hidden");
-    openModal(passwordModal);
-    setTimeout(function () {
-      if (passwordInput) passwordInput.focus();
-    }, 50);
-  });
-}
-
-async function submitPassword() {
-  if (!passwordInput) return;
-  const value = passwordInput.value.trim();
-
-  if (value === PASSWORD) {
-    if (passwordError) passwordError.classList.add("hidden");
-
-    if (!sb) {
-      alert("Backend not connected; edit mode is local-only.");
-    }
-
-    const user = await getCurrentUser();
-    if (sb && !user) {
-      alert("Log in first using the bar at the top.");
-      return;
-    }
-
-    if (sb) {
-      await loadMemoireFromSupabase();
-    } else if (editArea) {
-      buildPagesFromContent(editArea.innerHTML);
-    }
-    openModal(editModal);
-  } else {
-    if (passwordError) passwordError.classList.remove("hidden");
+btnPwdSubmit.addEventListener("click", async () => {
+  if (passwordInput.value.trim() !== PASSWORD) {
+    passwordError.classList.remove("hidden");
+    return;
   }
-}
 
-if (btnPwdSubmit) {
-  btnPwdSubmit.addEventListener("click", function () {
-    submitPassword();
-  });
-}
+  const user = await getCurrentUser();
+  if (!user) {
+    alert("Log in first.");
+    return;
+  }
 
-if (passwordInput) {
-  passwordInput.addEventListener("keydown", function (e) {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      submitPassword();
-    }
-  });
-}
+  await loadMemoireFromSupabase();
+  openModal(editModal);
+});
 
-if (btnPwdCancel) {
-  btnPwdCancel.addEventListener("click", function () {
-    closeOverlay();
-  });
-}
+btnPwdCancel.addEventListener("click", () => closeOverlay());
 
-// ===== Edit Close & Save =====
+// ===== Edit Save & Close =====
 
-if (btnEditClose) {
-  btnEditClose.addEventListener("click", function () {
-    closeOverlay();
-  });
-}
+btnEditSave.addEventListener("click", () => saveMemoireToSupabase());
+btnEditClose.addEventListener("click", () => closeOverlay());
 
-if (btnEditSave) {
-  btnEditSave.addEventListener("click", function () {
-    saveMemoireToSupabase();
-  });
-}
+// ===== Page Navigation =====
 
-// ===== Reader page navigation =====
-
-if (btnPagePrev) {
-  btnPagePrev.addEventListener("click", function () {
-    if (!memoirePages || memoirePages.length === 0) return;
-    if (currentPageIndex <= 0) return;
-    currentPageIndex = Math.max(0, currentPageIndex - 2);
+btnPagePrev.addEventListener("click", () => {
+  if (currentPageIndex > 0) {
+    currentPageIndex -= 2;
     updateReaderSpread();
-  });
-}
+  }
+});
 
-if (btnPageNext) {
-  btnPageNext.addEventListener("click", function () {
-    if (!memoirePages || memoirePages.length === 0) return;
-    if (currentPageIndex + 2 >= memoirePages.length) return;
-    currentPageIndex = currentPageIndex + 2;
+btnPageNext.addEventListener("click", () => {
+  if (currentPageIndex + 2 < memoirePages.length) {
+    currentPageIndex += 2;
     updateReaderSpread();
-  });
-}
+  }
+});
 
-// ===== ESC Key =====
+// ===== ESC to close =====
 
-document.addEventListener("keydown", function (e) {
-  if (e.key === "Escape" && overlay && !overlay.classList.contains("hidden")) {
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && !overlay.classList.contains("hidden")) {
     closeOverlay();
   }
 });
