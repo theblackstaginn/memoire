@@ -248,14 +248,14 @@ body {
   position: absolute;
   top: 18%;
   bottom: 14%;
-  width: 32%;
+  width: 36%;
   padding: 0 18px;
   overflow: hidden;
   color: #2b2217;
   font-family: "Cormorant Garamond", Georgia, serif;
   font-size: 1rem;
   line-height: 1.5;
-  white-space: pre-wrap;
+  white-space: pre-wrap; /* respect line breaks */
 }
 
 .page-left {
