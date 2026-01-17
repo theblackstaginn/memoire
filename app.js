@@ -19,6 +19,8 @@ if (typeof supabase === "undefined") {
 const PASSWORD = "stag";
 
 // ===== DOM hooks =====
+
+// Overlay + modals
 const overlay       = document.getElementById("modal-overlay");
 const warningModal  = document.getElementById("warning-modal");
 const passwordModal = document.getElementById("password-modal");
@@ -27,27 +29,33 @@ const editModal     = document.getElementById("edit-modal");
 
 const modals = [warningModal, passwordModal, readerModal, editModal];
 
+// Desk buttons
 const bookHitbox = document.getElementById("book-hitbox");
 const penHitbox  = document.getElementById("pen-hitbox");
 
+// Warning buttons
 const btnWarningLeave = document.getElementById("btn-warning-leave");
 const btnWarningOk    = document.getElementById("btn-warning-ok");
 
+// Password controls
 const passwordInput = document.getElementById("password-input");
 const passwordError = document.getElementById("password-error");
 const btnPwdCancel  = document.getElementById("btn-password-cancel");
 const btnPwdSubmit  = document.getElementById("btn-password-submit");
 
+// Reader controls
 const btnReaderClose = document.getElementById("btn-reader-close");
 const pageLeft       = document.getElementById("page-left");
 const pageRight      = document.getElementById("page-right");
 const btnPagePrev    = document.getElementById("btn-page-prev");
 const btnPageNext    = document.getElementById("btn-page-next");
 
+// Edit controls
 const btnEditClose = document.getElementById("btn-edit-close");
 const btnEditSave  = document.getElementById("btn-edit-save");
 const editArea     = document.getElementById("edit-area");
 
+// Auth bar
 const authStatus   = document.getElementById("auth-status");
 const authEmail    = document.getElementById("auth-email");
 const authPassword = document.getElementById("auth-password");
@@ -79,6 +87,7 @@ function closeOverlay() {
 // ===== Auth helpers =====
 async function getCurrentUser() {
   if (!sb) return null;
+
   const { data, error } = await sb.auth.getUser();
   if (error) {
     const msg = (error.message || "").toLowerCase();
@@ -90,7 +99,10 @@ async function getCurrentUser() {
 }
 
 function updateAuthUI(user) {
+  if (!authStatus || !authLogin || !authLogout) return;
+
   const loggedIn = !!user;
+
   authStatus.textContent = loggedIn
     ? "Signed in as " + user.email
     : "Not signed in";
@@ -106,7 +118,7 @@ function updateAuthUI(user) {
 
 // ===== Pagination =====
 
-// Turn HTML into plain text, preserving order
+// HTML -> plain text in DOM order
 function htmlToPlainText(html) {
   const tmp = document.createElement("div");
   tmp.innerHTML = html || "";
@@ -114,12 +126,13 @@ function htmlToPlainText(html) {
   return txt;
 }
 
-// Simple char-based paginator: never drops characters, just slices
+// Simple char-based paginator: never drops chars, just slices text
 function paginateByChars(text, maxChars) {
   if (!text) return [""];
+
   const pages = [];
-  let idx = 0;
   const len = text.length;
+  let idx = 0;
 
   while (idx < len) {
     let end = idx + maxChars;
@@ -128,12 +141,9 @@ function paginateByChars(text, maxChars) {
       break;
     }
 
-    // Try to cut at a space before the limit
+    // Prefer to cut at a space before the maxChars mark
     let cut = text.lastIndexOf(" ", end);
-    if (cut <= idx + maxChars * 0.4) {
-      // Space is way too far back; just hard cut
-      cut = end;
-    }
+    if (cut <= idx) cut = end; // no good space, hard cut
 
     pages.push(text.slice(idx, cut));
     idx = cut;
@@ -142,6 +152,7 @@ function paginateByChars(text, maxChars) {
   return pages.length ? pages : [""];
 }
 
+// Build pages from whatever is currently in the editor
 function buildPagesFromEditArea() {
   if (!editArea) {
     memoPages = [""];
@@ -154,7 +165,9 @@ function buildPagesFromEditArea() {
   const plain = htmlToPlainText(html);
 
   const vw = window.innerWidth || 1024;
-  const maxCharsPerPage = vw < 700 ? 600 : 900; // big enough to look like full pages
+  // This is how much fits on ONE physical page.
+  // Tweak if you want more/less text per page.
+  const maxCharsPerPage = vw < 700 ? 600 : 900;
 
   memoPages = paginateByChars(plain, maxCharsPerPage);
   currentPageIndex = 0;
@@ -167,8 +180,8 @@ function updateReaderSpread() {
   if (!memoPages || memoPages.length === 0) {
     pageLeft.textContent = "";
     pageRight.textContent = "";
-    btnPagePrev.classList.add("disabled");
-    btnPageNext.classList.add("disabled");
+    if (btnPagePrev) btnPagePrev.classList.add("disabled");
+    if (btnPageNext) btnPageNext.classList.add("disabled");
     return;
   }
 
@@ -176,7 +189,7 @@ function updateReaderSpread() {
   if (currentPageIndex >= memoPages.length) {
     currentPageIndex = Math.max(0, memoPages.length - 1);
   }
-  if (currentPageIndex % 2 !== 0) currentPageIndex--;
+  if (currentPageIndex % 2 !== 0) currentPageIndex--; // left page must be even index
 
   const leftIdx = currentPageIndex;
   const rightIdx = currentPageIndex + 1;
@@ -184,18 +197,26 @@ function updateReaderSpread() {
   pageLeft.textContent = memoPages[leftIdx] || "";
   pageRight.textContent = memoPages[rightIdx] || "";
 
-  const hasPrevSpread = currentPageIndex > 0;
-  const hasNextSpread = currentPageIndex + 2 < memoPages.length;
+  const hasPrevSpread = leftIdx > 0;
+  const hasNextSpread = rightIdx < memoPages.length - 1;
 
-  btnPagePrev.classList.toggle("disabled", !hasPrevSpread);
-  btnPageNext.classList.toggle("disabled", !hasNextSpread);
+  if (btnPagePrev) {
+    btnPagePrev.classList.toggle("disabled", !hasPrevSpread);
+  }
+  if (btnPageNext) {
+    btnPageNext.classList.toggle("disabled", !hasNextSpread);
+  }
 }
 
 // ===== Supabase load/save =====
 async function loadMemoireFromSupabase() {
   if (!sb || !editArea) return;
+
   const user = await getCurrentUser();
-  if (!user) return;
+  if (!user) {
+    console.warn("No user logged in; cannot load memoire.");
+    return;
+  }
 
   const { data, error } = await sb
     .from("memoire_entries")
@@ -215,12 +236,15 @@ async function loadMemoireFromSupabase() {
     editArea.innerHTML = "Start writing…";
   }
 
-  // Build pages from whatever we just loaded
+  // Build pages from what we just loaded
   buildPagesFromEditArea();
 }
 
 async function saveMemoireToSupabase() {
-  if (!sb || !editArea) return;
+  if (!sb || !editArea) {
+    alert("Backend not connected; cannot save.");
+    return;
+  }
 
   const user = await getCurrentUser();
   if (!user) {
@@ -243,11 +267,11 @@ async function saveMemoireToSupabase() {
 
   if (error) {
     console.error("Save failed:", error);
-    alert("Save failed. Check console.");
+    alert("Save failed. Check console for details.");
     return;
   }
 
-  console.log("Memoire saved.");
+  console.log("Memoire saved to Supabase.");
   buildPagesFromEditArea();
 }
 
@@ -255,7 +279,7 @@ async function saveMemoireToSupabase() {
 if (authLogin) {
   authLogin.addEventListener("click", async () => {
     if (!sb) {
-      alert("Backend not connected.");
+      alert("Backend is not connected.");
       return;
     }
     if (!authEmail.value || !authPassword.value) {
@@ -270,7 +294,7 @@ if (authLogin) {
 
     if (error) {
       console.error("Login error:", error);
-      alert("Login failed.");
+      alert("Login failed. Check email/password.");
       return;
     }
 
@@ -291,17 +315,20 @@ if (authLogout) {
 }
 
 // Initial auth check
-(async function init() {
+(async function initMemoire() {
   if (!sb) {
-    console.warn("Supabase not configured; local-only mode.");
+    console.warn("Supabase not configured; running in local-only mode.");
     buildPagesFromEditArea();
     return;
   }
+
   const user = await getCurrentUser();
   updateAuthUI(user);
+
   if (user) {
     await loadMemoireFromSupabase();
   } else {
+    // No user yet; still build pages from whatever is in the editor
     buildPagesFromEditArea();
   }
 })();
@@ -321,7 +348,7 @@ if (btnWarningLeave) {
 
 if (btnWarningOk) {
   btnWarningOk.addEventListener("click", () => {
-    // Always build reader pages from whatever is in the editor right now
+    // Always use current editor content for the reader
     buildPagesFromEditArea();
     openModal(readerModal);
   });
@@ -333,35 +360,39 @@ if (btnReaderClose) {
   });
 }
 
-// ===== Pen flow (edit) =====
-if (penHitbox) {
-  penHitbox.addEventListener("click", () => {
-    passwordInput.value = "";
-    passwordError.classList.add("hidden");
-    openModal(passwordModal);
-    setTimeout(() => passwordInput.focus(), 50);
-  });
-}
-
+// ===== Pen / password flow =====
 async function handlePasswordSubmit() {
+  if (!passwordInput || !passwordError) return;
   const value = passwordInput.value.trim();
+
   if (value !== PASSWORD) {
     passwordError.classList.remove("hidden");
     return;
   }
   passwordError.classList.add("hidden");
 
-  // Make sure we’re in sync with Supabase once when entering edit
+  // Sync from Supabase once when entering edit
   if (sb) {
     const user = await getCurrentUser();
     if (!user) {
-      alert("Log in first.");
+      alert("Log in first using the bar at the top.");
       return;
     }
     await loadMemoireFromSupabase();
   }
 
   openModal(editModal);
+}
+
+if (penHitbox) {
+  penHitbox.addEventListener("click", () => {
+    if (passwordInput) passwordInput.value = "";
+    if (passwordError) passwordError.classList.add("hidden");
+    openModal(passwordModal);
+    setTimeout(() => {
+      if (passwordInput) passwordInput.focus();
+    }, 50);
+  });
 }
 
 if (btnPwdSubmit) {
@@ -385,7 +416,7 @@ if (btnPwdCancel) {
   });
 }
 
-// ===== Edit save/close =====
+// ===== Edit save / close =====
 if (btnEditSave) {
   btnEditSave.addEventListener("click", () => {
     saveMemoireToSupabase();
@@ -415,7 +446,7 @@ if (btnPageNext) {
     currentPageIndex += 2;
     updateReaderSpread();
   });
-});
+}
 
 // ===== ESC key =====
 document.addEventListener("keydown", (e) => {
@@ -424,7 +455,7 @@ document.addEventListener("keydown", (e) => {
   }
 });
 
-// ===== Rebuild pages on resize (optional nicety) =====
+// Optional: rebuild page splits on resize so it stays pretty
 window.addEventListener("resize", () => {
   buildPagesFromEditArea();
 });
